@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Configuration, PlaidApi, PlaidEnvironments, CountryCode } from "plaid";
+import { Configuration, PlaidApi, PlaidEnvironments, CountryCode, Products } from "plaid";
 
 const configuration = new Configuration({
   basePath: PlaidEnvironments.Sandbox,
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
       client_name: "Vantyx Ledger",
       language: "en",
       country_codes: [CountryCode.Us],
-      products: ["auth"],
+      products: [Products.Auth],
     });
 
     return NextResponse.json({

@@ -15,7 +15,7 @@ export default function PortalLayout({
         overflowY: "auto",
       }}>
         <div style={{ marginBottom: "2rem" }}>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Vantyx</h1>
+          <h1 style={{ fontSize: "1.5rem", fontWeight: "bold" }}>Vantyx Ledger</h1>
           <p style={{ fontSize: "0.875rem", opacity: 0.7 }}>Ledger</p>
         </div>
 

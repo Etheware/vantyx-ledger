@@ -47,7 +47,7 @@ export default function LoginPage() {
         Sign In
       </h1>
       <p style={{ color: "#6b7280", marginBottom: "2rem" }}>
-        Access your Vantyx account
+        Access your Vantyx Ledger account
       </p>
 
       {error && (

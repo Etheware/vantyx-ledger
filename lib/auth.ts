@@ -1,6 +1,6 @@
+import { sql } from "drizzle-orm";
+import { randomUUID } from "crypto";
 import { getDatabase } from "vantyx-db";
-import { and, eq } from "vantyx-db";
-import { walletAccessGrants } from "vantyx-db/src/db/schema";
 
 export interface WalletSession {
   userId: string;
@@ -18,21 +18,38 @@ export interface WalletAccessGrant {
   accessStatus: string;
 }
 
+export interface WalletSessionRecord {
+  id: string;
+  userId: string;
+  token: string;
+  expiresAt: Date;
+}
+
+export async function createSession(userId: string): Promise<WalletSessionRecord> {
+  const db = getDatabase();
+  const id = randomUUID();
+  const token = randomUUID();
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+
+  await db.execute(sql`
+    insert into sessions (id, user_id, token, expires_at)
+    values (${id}, ${userId}, ${token}, ${expiresAt})
+  ` as any);
+
+  return { id, userId, token, expiresAt };
+}
+
 export async function getWalletAccessGrant(
   userId: string,
   tenantId: string
 ): Promise<WalletAccessGrant | null> {
   const db = getDatabase();
-  const grant = await db
-    .select()
-    .from(walletAccessGrants)
-    .where(
-      and(
-        eq(walletAccessGrants.userId, userId),
-        eq(walletAccessGrants.tenantId, tenantId)
-      )
-    )
-    .then(r => r[0]);
+  const query = `select user_id, tenant_id, role, withdrawal_allowed, access_status
+    from wallet_access_grants
+    where user_id = $1 and tenant_id = $2
+    limit 1`;
+  const result = await (db as any).execute(query, [userId, tenantId]);
+  const grant = result?.rows?.[0] ?? result?.[0];
 
   if (!grant) {
     return {

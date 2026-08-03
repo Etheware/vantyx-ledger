@@ -70,7 +70,7 @@ export default function BankConnectPage({
             <ol style={{ paddingLeft: "1.25rem" }}>
               <li>Click above to select your bank</li>
               <li>Securely enter your banking credentials</li>
-              <li>Authorize Vantyx to process the payment</li>
+              <li>Authorize Vantyx Ledger to process the payment</li>
               <li>Receive instant confirmation</li>
             </ol>
           </div>

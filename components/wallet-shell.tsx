@@ -10,7 +10,7 @@ export function WalletShell({ children }: { children: React.ReactNode }) {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-between items-center">
             <Link href="/" className="text-xl font-bold">
-              Vantyx Wallet
+              Vantyx Ledger Wallet
             </Link>
             <ul className="flex gap-6">
               <li><Link href="/overview">Overview</Link></li>

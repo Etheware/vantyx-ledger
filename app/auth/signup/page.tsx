@@ -54,7 +54,7 @@ export default function SignupPage() {
         Create Account
       </h1>
       <p style={{ color: "#6b7280", marginBottom: "2rem" }}>
-        Get started with Vantyx
+        Get started with Vantyx Ledger
       </p>
 
       {error && (

@@ -3,7 +3,7 @@ import { getProductByKey } from "@/lib/catalog/products";
 import { getClientBranding } from "@/lib/tenants/branding";
 import { renderProductCopy } from "@/lib/tenants/render-product-copy";
 import { createCheckoutToken } from "@/lib/billing/checkout-session";
-import { stripe } from "@/lib/billing/stripe";
+import { createCheckoutSession } from "@/lib/billing/stripe";
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     const successUrl = `${process.env.NEXT_PUBLIC_VANTYX_PORTAL_URL}/billing/success?token=${checkoutToken}`;
     const cancelUrl = `${process.env.NEXT_PUBLIC_VANTYX_PORTAL_URL}/billing/cancel`;
 
-    const stripeSession = await stripe.createCheckoutSession(
+    const stripeSession = await createCheckoutSession(
       email,
       productKey,
       product.priceCents,
