@@ -4,9 +4,6 @@ const config = {
   typescript: {
     ignoreBuildErrors: false,
   },
-  experimental: {
-    isrMemoryCacheSize: 0,
-  },
 };
 
 export default config;
