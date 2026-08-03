@@ -10,7 +10,7 @@
  * 5. Webhook endpoint configuration
  */
 
-import { getDatabase } from "../src/db";
+import { getDatabase } from "vantyx-db";
 import { tenants, catalogProducts, tenantProductBranding, clients } from "../src/db/schema";
 import { eq } from "drizzle-orm";
 

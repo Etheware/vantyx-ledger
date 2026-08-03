@@ -7,7 +7,7 @@ import {
   authChallenges,
   authUsers,
   getDatabase,
-} from "../../src/db";
+} from "vantyx-db";
 import { buildProvisioningUri, decryptSecret, encryptSecret, generateTotpSecret, verifyTotpCode } from "./totp";
 
 function normalizeEmail(email: string) {

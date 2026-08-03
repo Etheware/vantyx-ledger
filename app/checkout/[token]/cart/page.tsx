@@ -2,7 +2,7 @@
 import { notFound } from "next/navigation";
 import { verifyCheckoutSessionToken } from "../../../../lib/billing/checkout-session";
 import { getTenantProductBranding, BrandingNotFoundError } from "../../../../src/tenants/get-tenant-branding";
-import { getProductByKey } from "../../../../src/catalog/products";
+import { getProductByKey } from "@/lib/catalog/products";
 import { renderProductCopy } from "../../../../src/tenants/render-product-copy";
 import { CheckoutButton, CheckoutShell } from "../../../../components/vantyx-checkout-flow";
 

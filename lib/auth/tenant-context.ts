@@ -2,7 +2,7 @@
 import { eq } from "drizzle-orm";
 import { getSession } from "./get-session";
 import type { AuthSession } from "./session";
-import { getDatabase, tenants } from "../../src/db";
+import { getDatabase, tenants } from "vantyx-db";
 import type { TenantContext, TenantMembership, TenantSupportAccess } from "../../src/contracts/tenant-context";
 
 export type TenantContextResolutionOptions = {

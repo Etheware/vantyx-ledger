@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/src/db/client";
-import { users } from "@/src/db/schema";
+import { getDatabase as db } from "vantyx-db";
+import { users } from "vantyx-db";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 

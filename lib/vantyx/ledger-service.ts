@@ -1,6 +1,6 @@
 
 import { eq, and } from "drizzle-orm";
-import { getDatabase, ledgerEntries } from "../../src/db";
+import { getDatabase, ledgerEntries } from "vantyx-db";
 import { v4 as uuid } from "uuid";
 
 export interface LedgerEntry {

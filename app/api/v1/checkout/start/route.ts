@@ -21,7 +21,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
-import { getDatabase } from "../../../../../src/db";
+import { getDatabase } from "vantyx-db";
 import { tenants, catalogProducts, checkoutSessions } from "../../../../../src/db/schema";
 import { getTenantProductBranding, BrandingNotFoundError } from "../../../../../src/tenants/get-tenant-branding";
 import { createPaymentIntent } from "../../../../../lib/vantyx/payment-intent";

@@ -1,6 +1,6 @@
 
 import { eq, and } from "drizzle-orm";
-import { getDatabase, payments, invoices } from "../../src/db";
+import { getDatabase, payments, invoices } from "vantyx-db";
 import { v4 as uuid } from "uuid";
 
 export type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
