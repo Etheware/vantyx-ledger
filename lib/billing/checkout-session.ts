@@ -37,3 +37,5 @@ export function verifyCheckoutToken(token: string): CheckoutSessionPayload | nul
     return null;
   }
 }
+
+export const verifyCheckoutSessionToken = verifyCheckoutToken;

@@ -1,6 +1,6 @@
 import { sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
-import { getDatabase } from "vantyx-db";
+import { getDatabase } from "@/lib/db-compat";
 
 export interface WalletSession {
   userId: string;

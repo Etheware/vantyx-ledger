@@ -96,11 +96,3 @@ export function CheckoutPlaceOrderButton({
     </div>
   );
 }
-
-
-
-
-<excluded_findings>
-</excluded_findings>
-
-Find DIFFERENT vulnerabilities in the same diff. Look especially at + lines / functions / files the prior reviewer did not mention. If there are genuinely no other vulns, return findings:[].

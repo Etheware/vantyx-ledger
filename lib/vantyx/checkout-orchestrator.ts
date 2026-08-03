@@ -3,7 +3,7 @@ import { createPaymentService } from "./payment-service";
 import { createInvoiceService } from "./invoice-service";
 import { createLedgerService } from "./ledger-service";
 import { createEntitlementService } from "./entitlement-service";
-import { getDatabase, checkoutSessions, licenses } from "vantyx-db";
+import { getDatabase, checkoutSessions, licenses } from "@/lib/db-compat";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 

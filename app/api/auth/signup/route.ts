@@ -13,7 +13,7 @@ import {
 } from "../../../../lib/auth/email-code";
 import { sendEmailVerificationCode } from "../../../../lib/auth/email-sender";
 import { createErrorResponse } from "../../../../lib/auth/errors";
-import { getDatabase, authUsers } from "vantyx-db";
+import { getDatabase, authUsers } from "@/lib/db-compat";
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => null);

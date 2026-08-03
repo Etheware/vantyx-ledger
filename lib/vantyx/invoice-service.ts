@@ -1,6 +1,6 @@
 
 import { eq, desc, and } from "drizzle-orm";
-import { getDatabase, invoices } from "vantyx-db";
+import { getDatabase, invoices } from "@/lib/db-compat";
 import { v4 as uuid } from "uuid";
 
 export type InvoiceStatus = "draft" | "issued" | "paid" | "overdue" | "cancelled";

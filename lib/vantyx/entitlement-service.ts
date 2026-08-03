@@ -1,6 +1,6 @@
 
 import { eq, and, gte, isNull, or } from "drizzle-orm";
-import { getDatabase, entitlements } from "vantyx-db";
+import { getDatabase, entitlements } from "@/lib/db-compat";
 import { v4 as uuid } from "uuid";
 
 export type EntitlementStatus = "active" | "expired" | "suspended" | "revoked";

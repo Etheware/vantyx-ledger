@@ -1,6 +1,6 @@
-import { getDatabase } from "vantyx-db";
-import { and, eq } from "vantyx-db";
-import { paymentEvents } from "vantyx-db/src/db/schema";
+import { getDatabase } from "@/lib/db-compat";
+import { and, eq } from "@/lib/db-compat";
+import { paymentEvents } from "@/lib/db-compat";
 
 export interface WalletBalance {
   available: number;

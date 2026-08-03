@@ -1,6 +1,6 @@
 
 import { v4 as uuid } from "uuid";
-import { getDatabase, clients, tenants } from "vantyx-db";
+import { getDatabase, clients, tenants } from "@/lib/db-compat";
 import { eq } from "drizzle-orm";
 
 export type OrgInfo = {

@@ -1,6 +1,7 @@
 import { generateRandomCode, getEmailCodeExpirationSeconds } from "./email-code-shared";
 
 export const EMAIL_OTP_COOKIE = "vantyx_email_otp_session";
+export const EMAIL_VERIFIED_COOKIE = "vantyx_email_verified";
 
 export interface EmailOtpChallenge {
   code: string;
@@ -39,4 +40,9 @@ export function verifyEmailOtpCode(challenge: EmailOtpChallenge, code: string): 
     return false;
   }
   return challenge.code === code;
+}
+
+export function verifyVerifiedEmailToken(token: string): boolean {
+  // TODO: Implement email verification token validation
+  return !!token && token.length > 0;
 }
