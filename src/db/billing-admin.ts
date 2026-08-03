@@ -1,3 +1,7 @@
+import { getDatabase, paymentEvents } from "@/lib/db-compat";
+import { eq, and, gte, lte, sum, desc } from "drizzle-orm";
+import { v4 as uuid } from "uuid";
+
 type BillingEvent =
   | { type: "checkout_started"; tenantId: string; checkoutSessionId: string; createdAt: Date }
   | { type: "checkout_abandoned"; tenantId: string; checkoutSessionId: string; createdAt: Date }
@@ -27,14 +31,62 @@ const billingEvents: BillingEvent[] = [];
 
 export async function recordCheckoutStarted(checkoutSessionId: string, tenantId: string) {
   billingEvents.push({ type: "checkout_started", tenantId, checkoutSessionId, createdAt: new Date() });
+
+  // TODO: Persist to database via paymentEvents table
+  const db = getDatabase() as any;
+  if (db) {
+    try {
+      await db.insert(paymentEvents).values({
+        id: uuid(),
+        tenantId,
+        eventType: "checkout_started",
+        eventData: { checkoutSessionId },
+        recordedAt: new Date(),
+      });
+    } catch {
+      // Fail silently; in-memory events still recorded
+    }
+  }
 }
 
 export async function recordInvoiceDownloaded(invoiceId: string, tenantId: string, amount = 0) {
   billingEvents.push({ type: "invoice_downloaded", tenantId, invoiceId, amount, createdAt: new Date() });
+
+  // TODO: Persist to database via paymentEvents table
+  const db = getDatabase() as any;
+  if (db) {
+    try {
+      await db.insert(paymentEvents).values({
+        id: uuid(),
+        tenantId,
+        eventType: "invoice_downloaded",
+        eventData: { invoiceId, amount },
+        recordedAt: new Date(),
+      });
+    } catch {
+      // Fail silently; in-memory events still recorded
+    }
+  }
 }
 
 export async function recordReceiptViewed(receiptId: string, tenantId: string) {
   billingEvents.push({ type: "receipt_viewed", tenantId, receiptId, createdAt: new Date() });
+
+  // TODO: Persist to database via paymentEvents table
+  const db = getDatabase() as any;
+  if (db) {
+    try {
+      await db.insert(paymentEvents).values({
+        id: uuid(),
+        tenantId,
+        eventType: "receipt_viewed",
+        eventData: { receiptId },
+        recordedAt: new Date(),
+      });
+    } catch {
+      // Fail silently; in-memory events still recorded
+    }
+  }
 }
 
 export async function getBillingExportRows(tenantId: string, startDate = new Date(0), endDate = new Date()) {
@@ -81,8 +133,40 @@ export async function getBillingTrends(tenantId: string, period: "day" | "week" 
 
 export async function recordCheckoutAbandoned(checkoutSessionId: string, tenantId: string) {
   billingEvents.push({ type: "checkout_abandoned", tenantId, checkoutSessionId, createdAt: new Date() });
+
+  // TODO: Persist to database via paymentEvents table
+  const db = getDatabase() as any;
+  if (db) {
+    try {
+      await db.insert(paymentEvents).values({
+        id: uuid(),
+        tenantId,
+        eventType: "checkout_abandoned",
+        eventData: { checkoutSessionId },
+        recordedAt: new Date(),
+      });
+    } catch {
+      // Fail silently; in-memory events still recorded
+    }
+  }
 }
 
 export async function recordInvoiceCreated(invoiceId: string, tenantId: string, amount: number) {
   billingEvents.push({ type: "invoice_created", tenantId, invoiceId, amount, createdAt: new Date() });
+
+  // TODO: Persist to database via paymentEvents table
+  const db = getDatabase() as any;
+  if (db) {
+    try {
+      await db.insert(paymentEvents).values({
+        id: uuid(),
+        tenantId,
+        eventType: "invoice_created",
+        eventData: { invoiceId, amount },
+        recordedAt: new Date(),
+      });
+    } catch {
+      // Fail silently; in-memory events still recorded
+    }
+  }
 }
