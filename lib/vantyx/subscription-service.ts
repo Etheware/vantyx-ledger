@@ -30,7 +30,10 @@ export interface SubscriptionService {
 export function createSubscriptionService(): SubscriptionService {
   return {
     async createSubscription(input) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
       const subscriptionKey = `sub_${uuid().slice(0, 16)}`;
       const now = new Date();
       const currentPeriodEndAt = new Date(now.getTime() + input.billingCycleDays * 24 * 60 * 60 * 1000);
@@ -60,7 +63,10 @@ export function createSubscriptionService(): SubscriptionService {
     },
 
     async cancelSubscription(subscriptionId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       await db
         .update(subscriptions)
@@ -73,7 +79,10 @@ export function createSubscriptionService(): SubscriptionService {
     },
 
     async pauseSubscription(subscriptionId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       await db
         .update(subscriptions)
@@ -85,7 +94,10 @@ export function createSubscriptionService(): SubscriptionService {
     },
 
     async resumeSubscription(subscriptionId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       await db
         .update(subscriptions)
@@ -97,7 +109,10 @@ export function createSubscriptionService(): SubscriptionService {
     },
 
     async getSubscription(subscriptionId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        return null;
+      }
 
       const result = await db.query.subscriptions.findFirst({
         where: eq(subscriptions.id, subscriptionId),
@@ -107,7 +122,10 @@ export function createSubscriptionService(): SubscriptionService {
     },
 
     async getSubscriptionsByCustomer(customerId, tenantId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        return [];
+      }
 
       const results = await db.query.subscriptions.findMany({
         where: and(eq(subscriptions.customerId, customerId), eq(subscriptions.tenantId, tenantId)),
@@ -117,7 +135,10 @@ export function createSubscriptionService(): SubscriptionService {
     },
 
     async getDueForBilling(daysAhead = 1) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        return [];
+      }
       const now = new Date();
       const billingWindow = new Date(now.getTime() + daysAhead * 24 * 60 * 60 * 1000);
 

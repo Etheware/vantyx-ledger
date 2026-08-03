@@ -21,15 +21,18 @@ export interface CreatePaymentInput {
 
 export interface PaymentService {
   createPayment(input: CreatePaymentInput): Promise<any>;
-  updatePaymentStatus(paymentId: string, status: PaymentStatus, providerPaymentId?: string): Promise<void>;
-  getPayment(paymentId: string): Promise<any | null>;
-  getPaymentsByInvoice(invoiceId: string): Promise<any[]>;
+  updatePaymentStatus(paymentId: string, tenantId: string, status: PaymentStatus, providerPaymentId?: string): Promise<void>;
+  getPayment(paymentId: string, tenantId: string): Promise<any | null>;
+  getPaymentsByInvoice(invoiceId: string, tenantId: string): Promise<any[]>;
 }
 
 export function createPaymentService(): PaymentService {
   return {
     async createPayment(input) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       const payment = await db
         .insert(payments)
@@ -52,8 +55,11 @@ export function createPaymentService(): PaymentService {
       return payment[0];
     },
 
-    async updatePaymentStatus(paymentId, status, providerPaymentId) {
-      const db = getDatabase();
+    async updatePaymentStatus(paymentId, tenantId, status, providerPaymentId) {
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       await db
         .update(payments)
@@ -63,24 +69,30 @@ export function createPaymentService(): PaymentService {
           processedAt: status === "completed" ? new Date() : undefined,
           updatedAt: new Date(),
         })
-        .where(eq(payments.id, paymentId));
+        .where(and(eq(payments.id, paymentId), eq(payments.tenantId, tenantId)));
     },
 
-    async getPayment(paymentId) {
-      const db = getDatabase();
+    async getPayment(paymentId, tenantId) {
+      const db = getDatabase() as any;
+      if (!db) {
+        return null;
+      }
 
       const result = await db.query.payments.findFirst({
-        where: eq(payments.id, paymentId),
+        where: and(eq(payments.id, paymentId), eq(payments.tenantId, tenantId)),
       });
 
       return result || null;
     },
 
-    async getPaymentsByInvoice(invoiceId) {
-      const db = getDatabase();
+    async getPaymentsByInvoice(invoiceId, tenantId) {
+      const db = getDatabase() as any;
+      if (!db) {
+        return [];
+      }
 
       const results = await db.query.payments.findMany({
-        where: eq(payments.invoiceId, invoiceId),
+        where: and(eq(payments.invoiceId, invoiceId), eq(payments.tenantId, tenantId)),
       });
 
       return results;

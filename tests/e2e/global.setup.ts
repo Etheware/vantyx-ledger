@@ -7,26 +7,29 @@ async function globalSetup(config: FullConfig) {
   console.log("🔧 Running global setup...");
   console.log(`📍 Base URL: ${baseURL}`);
 
-  const browser = await chromium.launch();
-  const page = await browser.newPage();
+  let browser;
+  let page;
 
   try {
+    browser = await chromium.launch();
+    page = await browser.newPage();
+
     const response = await page.goto(`${baseURL}/_health`, {
       waitUntil: "domcontentloaded",
     });
 
     if (!response || !response.ok()) {
-      console.warn(
-        "⚠️  App health check failed. Make sure the app is running."
-      );
-    } else {
-      console.log("✅ App is healthy");
+      console.error("⚠️  App health check failed. Make sure the app is running.");
+      throw new Error("App health check failed");
     }
+
+    console.log("✅ App is healthy");
   } catch (error) {
     console.error("⚠️  Could not reach app at", baseURL);
     console.error("   Make sure the dev server is running: pnpm dev");
+    throw error;
   } finally {
-    await browser.close();
+    await browser?.close();
   }
 
   console.log("✅ Global setup complete\n");

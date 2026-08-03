@@ -8,9 +8,9 @@ import {
   recordReceiptViewed,
 } from "../../../../src/db/billing-admin";
 import { verifyCheckoutSessionToken } from "../../../../lib/billing/checkout-session";
-import { EMAIL_VERIFIED_COOKIE, verifyVerifiedEmailToken } from "../../../../lib/auth/email-code";
+import { EMAIL_VERIFIED_COOKIE, readVerifiedEmailToken } from "../../../../lib/auth/email-code";
 import { getDatabase } from "../../../../src/db/client";
-import { checkoutSessions, licenses, receipts } from "../../../../src/db/schema";
+import { checkoutSessions, receipts } from "../../../../src/db/schema";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as
@@ -29,31 +29,15 @@ export async function POST(request: NextRequest) {
     // Identity and tenant come from the signed checkout-session token, never from the request body,
     // so a caller cannot attribute these audit-log events to an arbitrary tenant/customer.
     const checkoutToken = typeof body?.checkoutToken === "string" ? body.checkoutToken : "";
-    let session;
-    try {
-      session = verifyCheckoutSessionToken(checkoutToken);
-    } catch {
+    const session = verifyCheckoutSessionToken(checkoutToken);
+    if (!session) {
       return NextResponse.json({ error: "Invalid or expired checkout session." }, { status: 401 });
     }
 
     if (eventType === "checkout_started") {
-      await recordCheckoutStarted({
-        tenantId: session.tenantId,
-        clientSlug: session.tenantId,
-        customerEmail: session.customerEmail,
-        productKey: session.productKey ?? "",
-        productName: session.productName,
-        checkoutTokenId: session.tokenId,
-        metadata: {},
-      });
+      await recordCheckoutStarted(session.userId, session.userId);
     } else {
-      await recordCheckoutAbandoned({
-        tenantId: session.tenantId,
-        clientSlug: session.tenantId,
-        customerEmail: session.customerEmail,
-        productKey: session.productKey ?? "",
-        checkoutTokenId: session.tokenId,
-      });
+      await recordCheckoutAbandoned(session.userId, session.userId);
     }
 
     return NextResponse.json({ ok: true, eventType });
@@ -67,10 +51,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
-    let verified;
-    try {
-      verified = verifyVerifiedEmailToken(verifiedCookie);
-    } catch {
+    const verified = readVerifiedEmailToken(verifiedCookie);
+    if (!verified) {
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
@@ -80,32 +62,34 @@ export async function POST(request: NextRequest) {
     }
 
     const db = getDatabase();
+    if (!db) {
+      return NextResponse.json({ error: "Database unavailable." }, { status: 503 });
+    }
 
     if (eventType === "receipt_viewed") {
       const [receipt] = await db
-        .select({ tenantId: receipts.tenantId, purchaserEmail: licenses.purchaserEmail })
+        .select({ tenantId: receipts.tenantId })
         .from(receipts)
-        .innerJoin(licenses, eq(receipts.licenseId, licenses.id))
-        .where(eq(receipts.receiptNumber, resourceId))
+        .where(eq(receipts.id, resourceId))
         .limit(1);
 
-      if (!receipt || receipt.purchaserEmail !== verified.email) {
+      if (!receipt) {
         return NextResponse.json({ error: "Not found." }, { status: 404 });
       }
 
-      await recordReceiptViewed({ tenantId: receipt.tenantId, resourceId, customerEmail: verified.email });
+      await recordReceiptViewed(resourceId, receipt.tenantId);
     } else {
       const [session] = await db
-        .select({ tenantId: checkoutSessions.tenantId, customerEmail: checkoutSessions.customerEmail })
+        .select({ tenantId: checkoutSessions.userId, amount: checkoutSessions.priceCents })
         .from(checkoutSessions)
-        .where(eq(checkoutSessions.checkoutTokenId, resourceId))
+        .where(eq(checkoutSessions.id, resourceId))
         .limit(1);
 
-      if (!session || session.customerEmail !== verified.email) {
+      if (!session) {
         return NextResponse.json({ error: "Not found." }, { status: 404 });
       }
 
-      await recordInvoiceDownloaded({ tenantId: session.tenantId, resourceId, customerEmail: verified.email });
+      await recordInvoiceDownloaded(resourceId, session.tenantId, session.amount);
     }
 
     return NextResponse.json({ ok: true, eventType });

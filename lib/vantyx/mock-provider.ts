@@ -16,18 +16,21 @@ export interface MockPaymentResult {
 }
 
 interface MockPaymentRecord {
+  tenantId: string;
   providerId: string;
   amountCents: number;
   currency: string;
   status: "succeeded" | "failed";
   timestamp: Date;
   idempotencyKey?: string;
+  refundedCents?: number;
 }
 
 const mockPayments = new Map<string, MockPaymentRecord>();
 const idempotencyCache = new Map<string, MockPaymentResult>();
 
 export interface CreateMockPaymentParams {
+  tenantId: string;
   amountCents: number;
   currency: string;
   testCard: string;
@@ -37,8 +40,9 @@ export interface CreateMockPaymentParams {
 
 export class MockAdapter {
   async createPayment(params: CreateMockPaymentParams): Promise<MockPaymentResult> {
-    if (idempotencyCache.has(params.idempotencyKey)) {
-      return idempotencyCache.get(params.idempotencyKey)!;
+    const cacheKey = `${params.tenantId}:${params.idempotencyKey}`;
+    if (idempotencyCache.has(cacheKey)) {
+      return idempotencyCache.get(cacheKey)!;
     }
 
     const providerId = `mock_${uuid()}`;
@@ -73,33 +77,39 @@ export class MockAdapter {
       };
 
       mockPayments.set(providerId, {
+        tenantId: params.tenantId,
         providerId,
         amountCents: params.amountCents,
         currency: params.currency,
         status: "succeeded",
         timestamp: new Date(),
         idempotencyKey: params.idempotencyKey,
+        refundedCents: 0,
       });
     }
 
-    idempotencyCache.set(params.idempotencyKey, result);
+    idempotencyCache.set(cacheKey, result);
     return result;
   }
 
-  async retrievePayment(providerId: string): Promise<MockPaymentRecord | null> {
-    return mockPayments.get(providerId) || null;
+  async retrievePayment(tenantId: string, providerId: string): Promise<MockPaymentRecord | null> {
+    const payment = mockPayments.get(providerId);
+    return payment && payment.tenantId === tenantId ? payment : null;
   }
 
   async refundPayment(
+    tenantId: string,
     providerId: string,
     amountCents: number,
   ): Promise<{ success: boolean; refundId: string }> {
     const payment = mockPayments.get(providerId);
-    if (!payment) {
+    if (!payment || payment.tenantId !== tenantId) {
       return { success: false, refundId: "" };
     }
 
-    if (amountCents <= payment.amountCents) {
+    const alreadyRefunded = payment.refundedCents || 0;
+    if (amountCents + alreadyRefunded <= payment.amountCents) {
+      payment.refundedCents = alreadyRefunded + amountCents;
       return { success: true, refundId: `mock_refund_${uuid()}` };
     }
 

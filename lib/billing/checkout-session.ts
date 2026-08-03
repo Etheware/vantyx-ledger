@@ -5,6 +5,16 @@ export interface CheckoutSessionPayload {
   productKey: string;
   priceCents: number;
   currency: string;
+  tenantId?: string;
+  customerEmail?: string | null;
+  customerName?: string | null;
+  productName?: string;
+  clientRevenueCents?: number;
+  platformServicesCents?: number;
+  checkoutLicenseFeeCents?: number;
+  paymentMethodDefault?: string;
+  metadata?: Record<string, unknown>;
+  totalCardCents?: number;
 }
 
 const SECRET = process.env.CHECKOUT_SESSION_SECRET || "default-secret-change-in-production";

@@ -56,16 +56,18 @@ export async function createPaymentIntent(
   return intent;
 }
 
-export async function getPaymentIntent(id: string): Promise<PaymentIntent | null> {
-  return paymentIntents.get(id) || null;
+export async function getPaymentIntent(id: string, tenantId: string): Promise<PaymentIntent | null> {
+  const intent = paymentIntents.get(id) || null;
+  return intent && intent.tenantId === tenantId ? intent : null;
 }
 
 export async function updatePaymentIntent(
   id: string,
+  tenantId: string,
   updates: Partial<Omit<PaymentIntent, "id" | "tenantId" | "checkoutSessionId" | "amountCents" | "currency" | "createdAt">>,
 ): Promise<PaymentIntent | null> {
   const intent = paymentIntents.get(id);
-  if (!intent) {
+  if (!intent || intent.tenantId !== tenantId) {
     return null;
   }
 
@@ -80,10 +82,11 @@ export async function updatePaymentIntent(
 }
 
 export async function findPaymentIntentByCheckoutSession(
+  tenantId: string,
   checkoutSessionId: string,
 ): Promise<PaymentIntent | null> {
   for (const intent of paymentIntents.values()) {
-    if (intent.checkoutSessionId === checkoutSessionId) {
+    if (intent.tenantId === tenantId && intent.checkoutSessionId === checkoutSessionId) {
       return intent;
     }
   }

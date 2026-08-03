@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
   const { email, firstName, lastName, company, password, agreeToTerms } = parsed.data;
 
   try {
-    const db = getDatabase();
+    const db = getDatabase() as any;
 
     // Check if email already exists
     const existing = await db.query.authUsers.findFirst({
@@ -58,12 +58,12 @@ export async function POST(request: NextRequest) {
     // For now, just creating the user without full profile
 
     // Create email OTP challenge
-    const { code, token, expiresAt } = createEmailOtpChallenge(email);
+    const { code, token, expiresAt } = createEmailOtpChallenge();
     await createStoredAuthChallenge({
       email,
       purpose: "email_otp",
       secret: code,
-      expiresAt,
+      expiresAt: new Date(expiresAt),
       metadata: { firstName, lastName, company, agreeToTerms },
     });
 

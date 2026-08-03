@@ -31,11 +31,11 @@ function getSessionSecret() {
 
 function base64UrlEncode(value: Buffer | string) {
   const buffer = Buffer.isBuffer(value) ? value : Buffer.from(value);
-  return buffer.toString("base64").replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "");
+  return buffer.toString("base64").split("+").join("-").split("/").join("_").split("=").join("");
 }
 
 function base64UrlDecode(value: string) {
-  const normalized = value.replaceAll("-", "+").replaceAll("_", "/");
+  const normalized = value.split("-").join("+").split("_").join("/");
   const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
   return Buffer.from(padded, "base64").toString("utf8");
 }
@@ -68,7 +68,7 @@ export function verifyPendingTwoFactorToken(token: string) {
 
   const serialized = base64UrlDecode(encodedPayload);
   const expected = crypto.createHmac("sha256", getSessionSecret()).update(serialized).digest();
-  const provided = Buffer.from(encodedSignature.replaceAll("-", "+").replaceAll("_", "/"), "base64");
+  const provided = Buffer.from(encodedSignature.split("-").join("+").split("_").join("/"), "base64");
 
   if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {
     throw new Error("Invalid token");

@@ -1,6 +1,7 @@
 
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { getDatabase, tenantProductBranding, catalogProducts, tenants } from "../db";
+import { getClientBranding } from "@/lib/tenants/branding";
 
 export class BrandingNotFoundError extends Error {
   constructor(message: string) {
@@ -41,23 +42,27 @@ export async function getTenantProductBranding(
   tenantId: string,
   productKey: string,
 ): Promise<TenantBrandingWithOrgInfo> {
-  const db = getDatabase();
+  const db = getDatabase() as any;
+  if (!db) {
+    throw new BrandingNotFoundError(`Tenant not found: ${tenantId}`);
+  }
 
   const rows = await db
     .select({
       tenantId: tenantProductBranding.tenantId,
-      productKey: catalogProducts.productKey,
-      displayName: tenantProductBranding.displayName,
-      description: tenantProductBranding.description,
-      receiptCopy: tenantProductBranding.receiptCopy,
-      claimCopy: tenantProductBranding.claimCopy,
-      onboardingCopy: tenantProductBranding.onboardingCopy,
-      invoiceFooter: tenantProductBranding.invoiceFooter,
-      supportUrl: tenantProductBranding.supportUrl,
-      returnUrls: tenantProductBranding.returnUrls,
-      tenantName: tenants.publicName,
+      productKey: catalogProducts.key,
+      displayName: catalogProducts.name,
+      description: catalogProducts.description,
+      receiptCopy: null,
+      claimCopy: null,
+      onboardingCopy: null,
+      invoiceFooter: null,
+      supportUrl: null,
+      returnUrls: null,
+      tenantName: tenants.name,
       supportEmail: tenants.supportEmail,
       brandColor: tenants.brandColor,
+      logoUrl: tenantProductBranding.logoUrl,
     })
     .from(tenantProductBranding)
     .innerJoin(
@@ -65,9 +70,7 @@ export async function getTenantProductBranding(
       eq(tenantProductBranding.productId, catalogProducts.id),
     )
     .innerJoin(tenants, eq(tenantProductBranding.tenantId, tenants.id))
-    .where(
-      eq(catalogProducts.productKey, productKey),
-    )
+    .where(and(eq(tenantProductBranding.tenantId, tenantId), eq(catalogProducts.key, productKey)))
     .limit(1);
 
   if (!rows.length) {
@@ -77,9 +80,26 @@ export async function getTenantProductBranding(
   }
 
   const result = rows[0];
+  const clientBranding = getClientBranding(tenantId);
   return {
-    ...result,
-    returnUrls: result.returnUrls as { success: string; claim: string; billing: string; learning: string },
+    tenantId: result.tenantId,
+    productKey: result.productKey,
+    displayName: result.displayName ?? clientBranding.displayCopy.productName,
+    description: result.description ?? clientBranding.displayCopy.checkoutDescription,
+    receiptCopy: result.receiptCopy ?? clientBranding.receiptCopy,
+    claimCopy: result.claimCopy ?? clientBranding.claimCopy,
+    onboardingCopy: result.onboardingCopy ?? clientBranding.onboardingCopy,
+    invoiceFooter: result.invoiceFooter ?? clientBranding.invoiceFooter,
+    supportUrl: clientBranding.supportUrl,
+    returnUrls: {
+      success: clientBranding.returnUrls.successUrl,
+      claim: clientBranding.returnUrls.successUrl,
+      billing: clientBranding.returnUrls.successUrl,
+      learning: clientBranding.returnUrls.successUrl,
+    },
+    tenantName: result.tenantName ?? clientBranding.publicName,
+    supportEmail: result.supportEmail ?? clientBranding.supportEmail,
+    brandColor: result.brandColor ?? clientBranding.brandColor,
   };
 }
 
@@ -90,23 +110,27 @@ export async function getTenantProductBranding(
 export async function getTenantBrandingByTenantId(
   tenantId: string,
 ): Promise<TenantBrandingWithOrgInfo[]> {
-  const db = getDatabase();
+  const db = getDatabase() as any;
+  if (!db) {
+    return [];
+  }
 
   const rows = await db
     .select({
       tenantId: tenantProductBranding.tenantId,
-      productKey: catalogProducts.productKey,
-      displayName: tenantProductBranding.displayName,
-      description: tenantProductBranding.description,
-      receiptCopy: tenantProductBranding.receiptCopy,
-      claimCopy: tenantProductBranding.claimCopy,
-      onboardingCopy: tenantProductBranding.onboardingCopy,
-      invoiceFooter: tenantProductBranding.invoiceFooter,
-      supportUrl: tenantProductBranding.supportUrl,
-      returnUrls: tenantProductBranding.returnUrls,
-      tenantName: tenants.publicName,
+      productKey: catalogProducts.key,
+      displayName: catalogProducts.name,
+      description: catalogProducts.description,
+      receiptCopy: null,
+      claimCopy: null,
+      onboardingCopy: null,
+      invoiceFooter: null,
+      supportUrl: null,
+      returnUrls: null,
+      tenantName: tenants.name,
       supportEmail: tenants.supportEmail,
       brandColor: tenants.brandColor,
+      logoUrl: tenantProductBranding.logoUrl,
     })
     .from(tenantProductBranding)
     .innerJoin(
@@ -116,8 +140,24 @@ export async function getTenantBrandingByTenantId(
     .innerJoin(tenants, eq(tenantProductBranding.tenantId, tenants.id))
     .where(eq(tenantProductBranding.tenantId, tenantId));
 
-  return rows.map((row) => ({
-    ...row,
-    returnUrls: row.returnUrls as { success: string; claim: string; billing: string; learning: string },
+  return rows.map((row: any) => ({
+    tenantId: row.tenantId,
+    productKey: row.productKey,
+    displayName: row.displayName ?? getClientBranding(tenantId).displayCopy.productName,
+    description: row.description ?? getClientBranding(tenantId).displayCopy.checkoutDescription,
+    receiptCopy: row.receiptCopy ?? getClientBranding(tenantId).receiptCopy,
+    claimCopy: row.claimCopy ?? getClientBranding(tenantId).claimCopy,
+    onboardingCopy: row.onboardingCopy ?? getClientBranding(tenantId).onboardingCopy,
+    invoiceFooter: row.invoiceFooter ?? getClientBranding(tenantId).invoiceFooter,
+    supportUrl: getClientBranding(tenantId).supportUrl,
+    returnUrls: {
+      success: getClientBranding(tenantId).returnUrls.successUrl,
+      claim: getClientBranding(tenantId).returnUrls.successUrl,
+      billing: getClientBranding(tenantId).returnUrls.successUrl,
+      learning: getClientBranding(tenantId).returnUrls.successUrl,
+    },
+    tenantName: row.tenantName ?? getClientBranding(tenantId).publicName,
+    supportEmail: row.supportEmail ?? getClientBranding(tenantId).supportEmail,
+    brandColor: row.brandColor ?? getClientBranding(tenantId).brandColor,
   }));
 }

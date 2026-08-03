@@ -77,7 +77,10 @@ export function resolveTenantContextFromSession(
 }
 
 export async function assertTenantExists(organizationId: string) {
-  const db = getDatabase();
+  const db = getDatabase() as any;
+  if (!db) {
+    throw new TenantContextError("The selected organization no longer exists.", "unknown_tenant", 404);
+  }
   const tenant = await db.query.tenants.findFirst({
     where: eq(tenants.id, organizationId),
   });

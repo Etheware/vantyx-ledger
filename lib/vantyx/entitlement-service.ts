@@ -29,7 +29,10 @@ export interface EntitlementService {
 export function createEntitlementService(): EntitlementService {
   return {
     async grantEntitlement(input) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
       const entitlementKey = `ent_${uuid().slice(0, 16)}`;
 
       const entitlement = await db
@@ -55,7 +58,10 @@ export function createEntitlementService(): EntitlementService {
     },
 
     async checkEntitlement(customerId, feature) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        return false;
+      }
       const now = new Date();
 
       const entitlement = await db.query.entitlements.findFirst({
@@ -71,17 +77,23 @@ export function createEntitlementService(): EntitlementService {
     },
 
     async getEntitlements(customerId, tenantId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        return [];
+      }
 
       const results = await db.query.entitlements.findMany({
-        where: (t) => eq(t.customerId, customerId) && eq(t.tenantId, tenantId),
+        where: (t: any) => eq(t.customerId, customerId) && eq(t.tenantId, tenantId),
       });
 
       return results;
     },
 
     async consumeQuota(entitlementId, amount) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       const entitlement = await db.query.entitlements.findFirst({
         where: eq(entitlements.id, entitlementId),
@@ -107,7 +119,10 @@ export function createEntitlementService(): EntitlementService {
     },
 
     async revokeEntitlement(entitlementId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       await db
         .update(entitlements)
@@ -120,7 +135,10 @@ export function createEntitlementService(): EntitlementService {
     },
 
     async expireEntitlement(entitlementId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       await db
         .update(entitlements)

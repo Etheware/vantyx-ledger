@@ -22,20 +22,23 @@ export interface CreateInvoiceInput {
 
 export interface InvoiceService {
   createInvoice(input: CreateInvoiceInput): Promise<any>;
-  issueInvoice(invoiceId: string): Promise<void>;
-  markAsPaid(invoiceId: string, paidAt?: Date): Promise<void>;
-  getInvoice(invoiceId: string): Promise<any | null>;
+  issueInvoice(invoiceId: string, tenantId: string): Promise<void>;
+  markAsPaid(invoiceId: string, tenantId: string, paidAt?: Date): Promise<void>;
+  getInvoice(invoiceId: string, tenantId: string): Promise<any | null>;
   getInvoicesByCustomer(customerId: string, tenantId: string): Promise<any[]>;
 }
 
 async function generateInvoiceNumber(tenantId: string): Promise<string> {
-  const db = getDatabase();
+  const db = getDatabase() as any;
+  if (!db) {
+    throw new Error("Database unavailable");
+  }
   const now = new Date();
   const month = String(now.getMonth() + 1).padStart(2, "0");
   const year = String(now.getFullYear()).slice(-2);
 
   const latest = await db.query.invoices.findFirst({
-    where: eq(invoices.tenantId, tenantId),
+    where: and(eq(invoices.tenantId, tenantId), eq(invoices.status, "draft")),
     orderBy: [desc(invoices.createdAt)],
   });
 
@@ -47,7 +50,10 @@ async function generateInvoiceNumber(tenantId: string): Promise<string> {
 export function createInvoiceService(): InvoiceService {
   return {
     async createInvoice(input) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
       const invoiceNumber = await generateInvoiceNumber(input.tenantId);
 
       const invoice = await db
@@ -75,44 +81,66 @@ export function createInvoiceService(): InvoiceService {
       return invoice[0];
     },
 
-    async issueInvoice(invoiceId) {
-      const db = getDatabase();
+    async issueInvoice(invoiceId, tenantId) {
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
-      await db
+      const result = await db
         .update(invoices)
         .set({
           status: "issued",
           issuedAt: new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(invoices.id, invoiceId));
+        .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId), eq(invoices.status, "draft")))
+        .returning({ id: invoices.id });
+
+      if (result.length === 0) {
+        throw new Error("Invoice not found or cannot be issued");
+      }
     },
 
-    async markAsPaid(invoiceId, paidAt) {
-      const db = getDatabase();
+    async markAsPaid(invoiceId, tenantId, paidAt) {
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
-      await db
+      const result = await db
         .update(invoices)
         .set({
           status: "paid",
           paidAt: paidAt || new Date(),
           updatedAt: new Date(),
         })
-        .where(eq(invoices.id, invoiceId));
+        .where(and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId), eq(invoices.status, "issued")))
+        .returning({ id: invoices.id });
+
+      if (result.length === 0) {
+        throw new Error("Invoice not found or cannot be marked paid");
+      }
     },
 
-    async getInvoice(invoiceId) {
-      const db = getDatabase();
+    async getInvoice(invoiceId, tenantId) {
+      const db = getDatabase() as any;
+      if (!db) {
+        return null;
+      }
 
       const result = await db.query.invoices.findFirst({
-        where: eq(invoices.id, invoiceId),
+        where: and(eq(invoices.id, invoiceId), eq(invoices.tenantId, tenantId)),
       });
 
       return result || null;
     },
 
     async getInvoicesByCustomer(customerId, tenantId) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        return [];
+      }
 
       const results = await db.query.invoices.findMany({
         where: and(eq(invoices.customerId, customerId), eq(invoices.tenantId, tenantId)),

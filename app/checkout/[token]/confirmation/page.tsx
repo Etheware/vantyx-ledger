@@ -30,6 +30,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ t
   } catch {
     notFound();
   }
+  if (!session) notFound();
 
   return (
     <main className="min-h-[100dvh] bg-black text-white">
@@ -56,8 +57,8 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ t
             </p>
 
             <div className="mt-10 grid gap-4 rounded-[22px] border border-white/10 bg-black/20 p-6 sm:grid-cols-2">
-              <Stat label="Order" value={session.productName} />
-              <Stat label="Amount" value={currency(session.totalCardCents)} />
+              <Stat label="Order" value={session.productName ?? "Order"} />
+              <Stat label="Amount" value={currency(session.totalCardCents ?? 0)} />
             </div>
 
             <div className="mt-10 flex flex-wrap justify-center gap-4">

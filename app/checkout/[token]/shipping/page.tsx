@@ -15,6 +15,7 @@ export default async function ShippingPage({ params }: { params: Promise<{ token
   } catch {
     notFound();
   }
+  if (!session) notFound();
 
   return (
     <CheckoutShell
@@ -27,14 +28,14 @@ export default async function ShippingPage({ params }: { params: Promise<{ token
           <div className="rounded-[22px] border border-white/10 bg-[rgba(255,255,255,0.025)] p-6">
             <div className="text-[20px] uppercase tracking-[0.22em] text-white/88">Order summary</div>
             <div className="mt-6 rounded-[18px] border border-white/10 bg-black/20 p-4">
-              <div className="text-[14px] uppercase tracking-[0.2em] text-white/82">{session.productName}</div>
-              <div className="mt-4 text-right text-[20px]">{currency(session.totalCardCents)}</div>
+              <div className="text-[14px] uppercase tracking-[0.2em] text-white/82">{session.productName ?? "Order"}</div>
+              <div className="mt-4 text-right text-[20px]">{currency(session.totalCardCents ?? 0)}</div>
             </div>
             <div className="mt-6 space-y-4 text-[15px]">
-              <Line label="Subtotal" value={currency(session.clientRevenueCents)} />
+              <Line label="Subtotal" value={currency(session.clientRevenueCents ?? 0)} />
               <Line label="Tax (0%)" value="$0.00" />
               <div className="border-t border-white/10 pt-5">
-                <Line label="Total" value={currency(session.totalCardCents)} total />
+                <Line label="Total" value={currency(session.totalCardCents ?? 0)} total />
               </div>
             </div>
           </div>

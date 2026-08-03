@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { authenticateUser, beginTwoFactorEnrollment } from "../../../../../lib/auth/auth-store";
-import { EMAIL_VERIFIED_COOKIE, verifyVerifiedEmailToken } from "../../../../../lib/auth/email-code";
+import { EMAIL_VERIFIED_COOKIE, readVerifiedEmailToken } from "../../../../../lib/auth/email-code";
 import { generateQrCodeDataUrl } from "../../../../../lib/auth/totp";
 
 export async function POST(request: NextRequest) {
@@ -10,10 +10,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  let verified;
-  try {
-    verified = verifyVerifiedEmailToken(verifiedCookie);
-  } catch {
+  const verified = readVerifiedEmailToken(verifiedCookie);
+  if (!verified) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 

@@ -1,8 +1,3 @@
-# File: public/embed.js ===
-# Type: new
-# Size: 8360 bytes
-# Session: 76a3cded-6e35-4d23-9d82-9f196929547e
-
 /**
  * Vantyx Checkout Embed Script
  *
@@ -108,8 +103,8 @@
     container.appendChild(iframe);
 
     // postMessage communication for cross-origin
-    window.addEventListener("message", function (event) {
-      if (event.origin !== config.baseUrl) return;
+    function handleMessage(event) {
+      if (event.origin !== config.baseUrl || event.source !== iframe.contentWindow) return;
 
       if (event.data.type === "VANTYX_CHECKOUT_SUCCESS") {
         if (options.onSuccess) {
@@ -120,7 +115,9 @@
           options.onError(event.data.payload);
         }
       }
-    });
+    }
+
+    window.addEventListener("message", handleMessage);
   };
 
   /**
@@ -135,6 +132,10 @@
   VantyxCheckout.openModal = function (options) {
     if (!options.tenantSlug || !options.checkoutId) {
       console.error("VantyxCheckout.openModal requires tenantSlug and checkoutId");
+      return;
+    }
+
+    if (document.getElementById("vantyx-checkout-backdrop")) {
       return;
     }
 
@@ -193,10 +194,13 @@
       transition: all 150ms;
       z-index: 100000;
     `;
-    closeBtn.addEventListener("click", () => {
+    function cleanup(cancelled) {
+      document.removeEventListener("keydown", handleKeydown);
+      window.removeEventListener("message", handleMessage);
       backdrop.remove();
-      if (options.onCancel) options.onCancel();
-    });
+      if (cancelled && options.onCancel) options.onCancel();
+    }
+    closeBtn.addEventListener("click", () => cleanup(true));
     modal.appendChild(closeBtn);
 
     // Create iframe inside modal
@@ -216,23 +220,25 @@
     document.body.appendChild(backdrop);
 
     // Close on escape key
-    document.addEventListener("keydown", (e) => {
+    function handleKeydown(e) {
       if (e.key === "Escape") {
-        backdrop.remove();
+        cleanup(true);
       }
-    });
+    }
+    document.addEventListener("keydown", handleKeydown);
 
     // postMessage for success/error
-    window.addEventListener("message", function (event) {
-      if (event.origin !== config.baseUrl) return;
+    function handleMessage(event) {
+      if (event.origin !== config.baseUrl || event.source !== iframe.contentWindow) return;
 
       if (event.data.type === "VANTYX_CHECKOUT_SUCCESS") {
-        backdrop.remove();
+        cleanup(false);
         if (options.onSuccess) {
           options.onSuccess(event.data.payload);
         }
       }
-    });
+    }
+    window.addEventListener("message", handleMessage);
   };
 
   /**
@@ -245,8 +251,8 @@
 
     const style = document.createElement("style");
     style.id = "vantyx-checkout-theme";
-    const primaryColor = options.primaryColor || "#3B82F6";
-    const primaryColorHover = options.primaryColorHover || "#2563EB";
+    const primaryColor = escapeCssValue(options.primaryColor || "#3B82F6");
+    const primaryColorHover = escapeCssValue(options.primaryColorHover || "#2563EB");
 
     style.textContent = `
       @keyframes fadeIn {
@@ -266,11 +272,11 @@
       }
 
       :root {
-        --tenant-logo-url: ${options.logoUrl ? `url("${options.logoUrl}")` : "none"};
-        --tenant-logo-dark-url: ${options.logoDarkUrl ? `url("${options.logoDarkUrl}")` : "none"};
+        --tenant-logo-url: ${options.logoUrl ? `url("${escapeCssValue(options.logoUrl)}")` : "none"};
+        --tenant-logo-dark-url: ${options.logoDarkUrl ? `url("${escapeCssValue(options.logoDarkUrl)}")` : "none"};
         --tenant-color-primary: ${primaryColor};
         --tenant-color-primary-hover: ${primaryColorHover};
-        --tenant-company-name: "${options.companyName || "Vantyx Ledger"}";
+        --tenant-company-name: "${escapeCssValue(options.companyName || "Vantyx Ledger")}";
       }
 
       .vantyx-checkout-button-primary {
@@ -289,12 +295,13 @@
     document.head.appendChild(style);
   }
 
+  function escapeCssValue(value) {
+    return String(value).replace(/[\\\\"'`;{}]/g, "\\$&");
+  }
+
   /**
    * Expose config for debugging
    */
   VantyxCheckout.config = config;
   VantyxCheckout.version = "1.0.0";
 })();
-
-
-Investigate per the method in your instructions, then return the findings list.

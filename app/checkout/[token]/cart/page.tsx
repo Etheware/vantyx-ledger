@@ -18,12 +18,13 @@ export default async function CartPage({ params }: { params: Promise<{ token: st
   } catch {
     notFound();
   }
+  if (!session) notFound();
 
   const productKey = session.productKey ?? "weekly-learning-license";
 
   let branding;
   try {
-    branding = await getTenantProductBranding(session.tenantId, productKey);
+    branding = (await getTenantProductBranding(session.tenantId ?? "", productKey)) as any;
   } catch (error) {
     if (error instanceof BrandingNotFoundError) {
       notFound();
@@ -34,12 +35,13 @@ export default async function CartPage({ params }: { params: Promise<{ token: st
   const product = getProductByKey(productKey);
   const copy = product ? renderProductCopy(product, branding) : null;
   const displayName = copy?.displayName ?? branding.displayName;
-  const description = copy?.description ?? branding.description;
+  const description = (copy as any)?.description ?? (branding as any).description ?? "";
 
   return (
     <CheckoutShell
       token={token}
       step={1}
+      totalSteps={4}
       title="Your cart"
       subtitle="Review your items before checkout."
       summary={
@@ -49,13 +51,13 @@ export default async function CartPage({ params }: { params: Promise<{ token: st
             <div className="mt-6 rounded-[18px] border border-white/10 bg-black/20 p-4">
               <div className="text-[14px] uppercase tracking-[0.2em] text-white/82">{displayName}</div>
               <div className="mt-1 text-[13px] text-white/46">Monthly subscription</div>
-              <div className="mt-4 text-right text-[20px] text-white/88">{currency(session.totalCardCents)}</div>
+              <div className="mt-4 text-right text-[20px] text-white/88">{currency(session.totalCardCents ?? 0)}</div>
             </div>
             <div className="mt-6 space-y-4 text-[15px]">
-              <Line label="Subtotal" value={currency(session.clientRevenueCents)} />
+              <Line label="Subtotal" value={currency(session.clientRevenueCents ?? 0)} />
               <Line label="Tax (0%)" value="$0.00" />
               <div className="border-t border-white/10 pt-5">
-                <Line label="Total" value={currency(session.totalCardCents)} total />
+                <Line label="Total" value={currency(session.totalCardCents ?? 0)} total />
               </div>
             </div>
           </div>
@@ -81,7 +83,7 @@ export default async function CartPage({ params }: { params: Promise<{ token: st
               <div className="mt-2 text-[15px] text-white/56">{description}</div>
             </div>
           </div>
-          <div className="text-[24px] font-light">{currency(session.totalCardCents)}</div>
+          <div className="text-[24px] font-light">{currency(session.totalCardCents ?? 0)}</div>
         </div>
 
         <div className="mt-8 rounded-[18px] border border-white/10 bg-white/[0.02] p-4">

@@ -16,6 +16,7 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
   } catch {
     notFound();
   }
+  if (!session) notFound();
 
   return (
     <CheckoutShell
@@ -28,14 +29,14 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
           <div className="rounded-[22px] border border-white/10 bg-[rgba(255,255,255,0.025)] p-6">
             <div className="text-[20px] uppercase tracking-[0.22em] text-white/88">Order summary</div>
             <div className="mt-6 rounded-[18px] border border-white/10 bg-black/20 p-4">
-              <div className="text-[14px] uppercase tracking-[0.2em] text-white/82">{session.productName}</div>
-              <div className="mt-4 text-right text-[20px]">{currency(session.totalCardCents)}</div>
+              <div className="text-[14px] uppercase tracking-[0.2em] text-white/82">{session.productName ?? "Order"}</div>
+              <div className="mt-4 text-right text-[20px]">{currency(session.totalCardCents ?? 0)}</div>
             </div>
             <div className="mt-6 space-y-4 text-[15px]">
-              <Line label="Subtotal" value={currency(session.clientRevenueCents)} />
+              <Line label="Subtotal" value={currency(session.clientRevenueCents ?? 0)} />
               <Line label="Tax (0%)" value="$0.00" />
               <div className="border-t border-white/10 pt-5">
-                <Line label="Total" value={currency(session.totalCardCents)} total />
+                <Line label="Total" value={currency(session.totalCardCents ?? 0)} total />
               </div>
             </div>
           </div>
@@ -52,16 +53,16 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
       footerRight={
         <CheckoutPlaceOrderButton
           session={{
-            tenantId: session.tenantId,
-            customerEmail: session.customerEmail,
-            customerName: session.customerName,
+            tenantId: session.tenantId ?? "",
+            customerEmail: session.customerEmail ?? "",
+            customerName: session.customerName ?? "",
             productKey: session.productKey,
-            productName: session.productName,
-            clientRevenueCents: session.clientRevenueCents,
-            platformServicesCents: session.platformServicesCents,
-            checkoutLicenseFeeCents: session.checkoutLicenseFeeCents,
-            paymentMethodDefault: session.paymentMethodDefault,
-            metadata: session.metadata,
+            productName: session.productName ?? "",
+            clientRevenueCents: session.clientRevenueCents ?? 0,
+            platformServicesCents: session.platformServicesCents ?? 0,
+            checkoutLicenseFeeCents: session.checkoutLicenseFeeCents ?? 0,
+            paymentMethodDefault: session.paymentMethodDefault ?? "",
+            metadata: session.metadata ?? {},
           }}
         />
       }
@@ -71,9 +72,9 @@ export default async function ReviewPage({ params }: { params: Promise<{ token: 
           <div className="text-[20px] uppercase tracking-[0.2em] text-white/88">Order items</div>
           <div className="mt-6 flex items-center justify-between rounded-[18px] border border-white/10 bg-white/[0.02] px-4 py-4">
             <div>
-              <div className="text-[14px] uppercase tracking-[0.18em] text-white/82">{session.productName}</div>
+              <div className="text-[14px] uppercase tracking-[0.18em] text-white/82">{session.productName ?? "Order"}</div>
             </div>
-            <div className="text-[20px]">{currency(session.totalCardCents)}</div>
+            <div className="text-[20px]">{currency(session.totalCardCents ?? 0)}</div>
           </div>
         </div>
 

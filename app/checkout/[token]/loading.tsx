@@ -3,13 +3,13 @@ export default function CheckoutLoading() {
   return (
     <main className="min-h-[100dvh] bg-black text-white">
       <div className="mx-auto min-h-[100dvh] max-w-[1600px] px-4 py-4 sm:px-6 sm:py-6">
-        <div className="min-h-[calc(100dvh-2rem)] rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5 sm:p-6">
+        <div className="min-h-[calc(100dvh-2rem)] rounded-[26px] border border-white/10 bg-[linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.015))] p-5 sm:min-h-[calc(100dvh-3rem)] sm:p-6">
           <div className="flex items-center justify-between">
             <div className="space-y-3">
-              <div className="h-8 w-36 rounded-full bg-white/10" />
-              <div className="h-3 w-24 rounded-full bg-white/10" />
+              <div className="h-8 w-24 rounded-full bg-white/10 sm:w-36" />
+              <div className="h-3 w-20 rounded-full bg-white/10 sm:w-24" />
             </div>
-            <div className="h-10 w-40 rounded-full bg-white/10" />
+            <div className="h-10 w-28 rounded-full bg-white/10 sm:w-40" />
           </div>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-5">

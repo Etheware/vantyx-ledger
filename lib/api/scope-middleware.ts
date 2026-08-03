@@ -1,13 +1,17 @@
 
 import { NextRequest } from "next/server";
 import { Scope } from "@/lib/scope/types";
+import { verifySessionToken } from "@/lib/auth/session";
 
 export interface ScopeRequestContext {
   scope: Scope;
   userId: string;
 }
 
-export function extractScopeFromRequest(request: NextRequest): Partial<Scope> | null {
+export async function extractScopeFromRequest(
+  request: NextRequest,
+  sessionId: string | null | undefined = undefined
+): Promise<Partial<Scope> | null> {
   const url = new URL(request.url);
   const org = url.searchParams.get("org");
   const project = url.searchParams.get("project");
@@ -15,6 +19,14 @@ export function extractScopeFromRequest(request: NextRequest): Partial<Scope> | 
 
   if (!org || !project || !environment) {
     return null;
+  }
+
+  // If session is provided, validate that requested org matches session org
+  if (sessionId) {
+    const session = await verifySessionToken(sessionId);
+    if (!session || session.orgUuid !== org) {
+      return null; // Silently reject scope mismatch
+    }
   }
 
   return {

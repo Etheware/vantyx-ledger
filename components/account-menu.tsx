@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth/session-provider";
 import { useCapabilities } from "@/hooks/use-capabilities";
@@ -15,16 +15,40 @@ export function AccountMenu() {
   const { session } = useSession();
   const capabilities = useCapabilities();
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+
+    function handleKeydown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+      }
+    }
+
+    document.addEventListener("click", handleDocumentClick);
+    document.addEventListener("keydown", handleKeydown);
+    return () => {
+      document.removeEventListener("click", handleDocumentClick);
+    document.removeEventListener("keydown", handleKeydown);
+    };
+  }, []);
 
   if (!session) {
     return null;
   }
 
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="menu"
+        aria-expanded={isOpen}
         className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-surface transition-colors"
       >
         <div className="flex flex-col items-end gap-0">

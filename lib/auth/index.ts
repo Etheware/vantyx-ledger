@@ -4,7 +4,7 @@ export * from "./email-code";
 export * from "./email-code-shared";
 export * from "./email-sender";
 export * from "./errors";
-export * from "./get-session";
+export { getSession as getRequestSession } from "./get-session";
 export * from "./org-helper";
 export * from "./session";
 export * from "./session-provider";

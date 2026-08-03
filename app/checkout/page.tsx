@@ -1,4 +1,5 @@
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 /**
@@ -96,12 +97,12 @@ function HostedCheckoutForm({ checkoutId, tenantSlug }: HostedCheckoutFormProps)
         >
           Pay Now
         </button>
-        <a
-          href="javascript:history.back()"
+        <Link
+          href="/checkout/error?code=cancelled"
           className="block text-center px-4 py-3 rounded-lg border border-border text-text-secondary hover:text-text-primary hover:bg-surface-raised transition-colors text-sm"
         >
           Cancel
-        </a>
+        </Link>
       </div>
 
       {/* Trust badges */}

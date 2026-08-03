@@ -49,7 +49,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
     }
 
-    const db = getDatabase();
+    const db = getDatabase() as any;
+    if (!db) {
+      return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
+    }
 
     // 1. Resolve and validate tenant
     const tenantId = body.tenantId?.trim();
@@ -71,7 +74,7 @@ export async function POST(request: NextRequest) {
     // 2. Resolve and validate product
     const productKey = body.productKey?.trim() ?? "weekly-learning-license";
     const product = await db.query.catalogProducts.findFirst({
-      where: eq(catalogProducts.productKey, productKey),
+      where: eq(catalogProducts.key, productKey),
     });
 
     if (!product) {
@@ -96,10 +99,17 @@ export async function POST(request: NextRequest) {
     }
 
     // 4. Validate quantity
-    const quantity = Math.max(1, Math.floor(body.quantity ?? 1));
+    const MAX_QUANTITY = 100;
+    const quantity = Math.min(MAX_QUANTITY, Math.max(1, Math.floor(body.quantity ?? 1)));
 
     // 5. Calculate amount server-side (never trust browser)
-    const amountCents = product.priceCents! * quantity;
+    if (product.priceCents == null) {
+      return NextResponse.json(
+        { error: "Product pricing not configured" },
+        { status: 500 },
+      );
+    }
+    const amountCents = product.priceCents * quantity;
     const platformFee = Math.round(amountCents * 0.02); // 2% platform fee
     const totalCents = amountCents + platformFee;
 
@@ -136,32 +146,19 @@ export async function POST(request: NextRequest) {
 
     const checkoutSession = await db.insert(checkoutSessions).values({
       id: checkoutSessionId,
-      tenantId,
-      clientId: tenant.id, // For now, use tenant ID as client ID (legacy compatibility)
-      productId: product.id,
-      checkoutTokenId: checkoutSessionId,
-      customerEmail: customerEmail ?? "unknown@example.com",
-      customerName: body.customerName?.trim(),
+      token: checkoutSessionId,
+      userId: tenant.ownerId,
       productKey,
-      productName: branding.displayName,
-      paymentMethodDefault: "stripe_card",
-      clientRevenueCents: amountCents,
-      platformServicesCents: platformFee,
-      checkoutLicenseFeeCents: 0,
-      cardProcessingFeeCents: 0,
-      totalBankCents: totalCents,
-      totalCardCents: totalCents,
-      metadata: {
-        clientReference: body.customerEmail ? `${tenantId}-${productKey}` : null,
-        successUrl,
-        cancelUrl,
-      },
+      priceCents: totalCents,
+      currency: "USD",
+      status: "pending",
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     }).returning();
 
     // 9. Create payment intent
     const paymentIntent = await createPaymentIntent({
       tenantId,
-      checkoutSessionId,
+      checkoutSessionId: checkoutSessionId,
       amountCents: totalCents,
       currency: "usd",
       metadata: {
@@ -178,16 +175,8 @@ export async function POST(request: NextRequest) {
       paymentIntentId: paymentIntent.id,
       amountCents: totalCents,
       currency: "usd",
-      product: {
-        key: productKey,
-        name: branding.displayName,
-        description: branding.description,
-      },
-      pricing: {
-        subtotal: amountCents / 100,
-        platformFee: platformFee / 100,
-        total: totalCents / 100,
-      },
+      product: { key: productKey, name: branding.displayName, description: branding.description },
+      pricing: { subtotal: amountCents / 100, platformFee: platformFee / 100, total: totalCents / 100 },
       nextAction: {
         type: "provider_action_required",
         provider: "stripe_card",

@@ -16,6 +16,7 @@
 import { v4 as uuid } from "uuid";
 import { createPaymentIntent, updatePaymentIntent, getPaymentIntent } from "./payment-intent";
 import { createMockAdapter } from "./mock-provider";
+import crypto from "crypto";
 
 export interface PaymentProcessingInput {
   tenantId: string;
@@ -48,13 +49,13 @@ export async function processPayment(input: PaymentProcessingInput): Promise<Pay
 
   try {
     // 1. Get or create payment intent
-    let intent = await getPaymentIntent(input.paymentIntentId);
-    if (!intent) {
+    let intent = await getPaymentIntent(input.paymentIntentId, input.tenantId);
+    if (!intent || intent.tenantId !== input.tenantId) {
       throw new Error("Payment intent not found");
     }
 
     // 2. Update to processing
-    await updatePaymentIntent(input.paymentIntentId, {
+    await updatePaymentIntent(input.paymentIntentId, input.tenantId, {
       status: "processing",
       providerId: `temp_${paymentId}`,
       providerName: input.providerName,
@@ -67,6 +68,7 @@ export async function processPayment(input: PaymentProcessingInput): Promise<Pay
     if (input.providerName === "mock") {
       const mockAdapter = createMockAdapter();
       const mockResult = await mockAdapter.createPayment({
+        tenantId: input.tenantId,
         amountCents: input.amountCents,
         currency: input.currency,
         testCard: input.testCard || "4242-4242-4242-4242",
@@ -87,13 +89,13 @@ export async function processPayment(input: PaymentProcessingInput): Promise<Pay
 
     // 4. Finalize payment status
     if (providerStatus === "succeeded") {
-      await updatePaymentIntent(input.paymentIntentId, {
+      await updatePaymentIntent(input.paymentIntentId, input.tenantId, {
         status: "completed",
         providerId,
         providerName: input.providerName,
       });
     } else {
-      await updatePaymentIntent(input.paymentIntentId, {
+      await updatePaymentIntent(input.paymentIntentId, input.tenantId, {
         status: "failed",
         providerId,
         providerName: input.providerName,
@@ -187,6 +189,9 @@ export async function processPayment(input: PaymentProcessingInput): Promise<Pay
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    await updatePaymentIntent(input.paymentIntentId, input.tenantId, {
+      status: "failed",
+    });
 
     return {
       success: false,
@@ -203,9 +208,10 @@ export async function processPayment(input: PaymentProcessingInput): Promise<Pay
 }
 
 function generateWebhookSignature(payload: Record<string, any>): string {
-  // In production, use HMAC-SHA256 with webhook secret
-  const secret = process.env.BEP_WEBHOOK_SECRET || "dev_secret_key";
-  const crypto = require("crypto");
+  const secret = process.env.BEP_WEBHOOK_SECRET;
+  if (!secret) {
+    throw new Error("BEP_WEBHOOK_SECRET is not configured");
+  }
   const hmac = crypto.createHmac("sha256", secret);
   hmac.update(JSON.stringify(payload));
   return hmac.digest("hex");
@@ -232,7 +238,7 @@ async function simulateWebhookDelivery(params: {
 }
 
 // Helper: Process webhook event with idempotency
-const processedWebhooks = new Set<string>();
+const processedWebhooks = new Map<string, { eventId: string; processedAt: Date }>();
 
 export async function processWebhookEvent(
   tenantId: string,
@@ -248,7 +254,7 @@ export async function processWebhookEvent(
   }
 
   // Mark as processed
-  processedWebhooks.add(key);
+  processedWebhooks.set(key, { eventId, processedAt: new Date() });
 
   // In production:
   // - Verify webhook signature

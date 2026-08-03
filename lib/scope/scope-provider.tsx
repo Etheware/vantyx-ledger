@@ -36,17 +36,18 @@ export function ScopeProvider({
         }
 
         if (scope) {
-          const validation = validateScope(scope, userOrganizations, userProjects);
+          const scoped = scope;
+          const validation = validateScope(scoped, userOrganizations, userProjects);
           if (!validation.valid) {
             console.warn("Invalid scope:", validation.error);
             scope = null;
           } else {
-            const org = userOrganizations.find((o) => o.id === scope.organizationId);
-            const proj = userProjects.find((p) => p.id === scope.projectId);
+            const org = userOrganizations.find((o) => o.id === scoped.organizationId);
+            const proj = userProjects.find((p) => p.id === scoped.projectId);
 
             if (org && proj) {
               scope = {
-                ...scope,
+                ...scoped,
                 organizationSlug: org.slug,
                 organizationName: org.name,
                 projectSlug: proj.slug,

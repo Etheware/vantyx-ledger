@@ -1,5 +1,5 @@
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { extractScopeFromRequest, createScopeError } from "./scope-middleware";
 
 export interface ProtectedPortalRequest {
@@ -18,26 +18,31 @@ export async function protectedPortalHandler(
   options?: {
     validateOrganizationAccess?: (userId: string, orgId: string) => Promise<boolean>;
     validateProjectAccess?: (userId: string, orgId: string, projectId: string) => Promise<boolean>;
+    resolveUserId?: (request: NextRequest) => Promise<string | null>;
+    getSessionId?: (request: NextRequest) => string | null;
   }
 ): Promise<Response> {
-  // Extract scope from URL
-  const scope = extractScopeFromRequest(request);
+  // Require a server-validated identity source before extracting scope
+  const userId = options?.resolveUserId ? await options.resolveUserId(request) : null;
+  if (!userId) {
+    return createScopeError("Unauthorized", 401);
+  }
+
+  // Get session ID for scope validation
+  const sessionId = options?.getSessionId ? options.getSessionId(request) : null;
+
+  // Extract and validate scope against session
+  const scope = await extractScopeFromRequest(request, sessionId);
   if (!scope || !scope.organizationId || !scope.projectId || !scope.environment) {
     return createScopeError(
-      "Scope parameters required: org, project, environment",
-      400
+      "Invalid or unauthorized scope parameters",
+      403
     );
   }
 
   // Validate environment
   if (scope.environment !== "test" && scope.environment !== "live") {
     return createScopeError("Invalid environment", 400);
-  }
-
-  // Extract user ID from request (would come from auth header or session)
-  const userId = request.headers.get("x-user-id") || "";
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   // Optionally validate organization access

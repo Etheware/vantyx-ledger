@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { hasActiveTwoFactor } from "../../../../../lib/auth/auth-store";
-import { EMAIL_VERIFIED_COOKIE, verifyVerifiedEmailToken } from "../../../../../lib/auth/email-code";
+import { EMAIL_VERIFIED_COOKIE, readVerifiedEmailToken } from "../../../../../lib/auth/email-code";
 
 export async function GET(request: NextRequest) {
   const token = request.cookies.get(EMAIL_VERIFIED_COOKIE)?.value;
@@ -9,10 +9,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  let verified;
-  try {
-    verified = verifyVerifiedEmailToken(token);
-  } catch {
+  const verified = readVerifiedEmailToken(token);
+  if (!verified) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 

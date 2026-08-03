@@ -26,7 +26,10 @@ export interface WalletSessionRecord {
 }
 
 export async function createSession(userId: string): Promise<WalletSessionRecord> {
-  const db = getDatabase();
+  const db = getDatabase() as any;
+  if (!db) {
+    throw new Error("Database unavailable");
+  }
   const id = randomUUID();
   const token = randomUUID();
   const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
@@ -43,7 +46,10 @@ export async function getWalletAccessGrant(
   userId: string,
   tenantId: string
 ): Promise<WalletAccessGrant | null> {
-  const db = getDatabase();
+  const db = getDatabase() as any;
+  if (!db) {
+    return null;
+  }
   const query = `select user_id, tenant_id, role, withdrawal_allowed, access_status
     from wallet_access_grants
     where user_id = $1 and tenant_id = $2

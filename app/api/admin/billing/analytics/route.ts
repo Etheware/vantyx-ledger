@@ -29,7 +29,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const tenantId = request.nextUrl.searchParams.get("tenantId")?.trim() || undefined;
-  const trends = await getBillingTrends(tenantId);
+  const tenantId = request.nextUrl.searchParams.get("tenantId")?.trim() || "";
+  const period = (request.nextUrl.searchParams.get("period")?.trim() as "day" | "week" | "month" | null) || "month";
+  const trends = await getBillingTrends(tenantId, period);
   return NextResponse.json({ ok: true, tenantId: tenantId ?? null, trends });
 }

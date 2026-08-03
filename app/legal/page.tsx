@@ -22,7 +22,7 @@ export default function LegalPage() {
       {/* Navigation */}
       <div className="border-b border-white/10 bg-white/5">
         <div className="mx-auto max-w-[1200px] px-6">
-          <div className="flex gap-8 py-6">
+          <div className="flex flex-wrap gap-8 py-6">
             <a href="#privacy" className="text-blue-300 hover:text-blue-200">
               Privacy Policy
             </a>

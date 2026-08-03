@@ -29,15 +29,21 @@ export function createCheckoutOrchestrator(): CheckoutOrchestrator {
 
   return {
     async completeCheckout(input) {
-      const db = getDatabase();
+      const db = getDatabase() as any;
+      if (!db) {
+        throw new Error("Database unavailable");
+      }
 
       // 1. Fetch checkout session
       const session = await db.query.checkoutSessions.findFirst({
-        where: eq(checkoutSessions.checkoutTokenId, input.checkoutTokenId),
+        where: eq(checkoutSessions.token, input.checkoutTokenId),
       });
 
       if (!session) {
         throw new Error("Checkout session not found");
+      }
+      if (session.tenantId !== input.tenantId) {
+        throw new Error("Checkout session tenant mismatch");
       }
 
       // 2. Create invoice from checkout
@@ -64,7 +70,7 @@ export function createCheckoutOrchestrator(): CheckoutOrchestrator {
         customerId: input.customerId,
         customerEmail: input.customerEmail,
         paymentRail: input.paymentRail,
-        amountCents: input.amountCents,
+        amountCents: session.clientRevenueCents + session.platformServicesCents + session.checkoutLicenseFeeCents,
         description: `Payment for ${session.productName}`,
         metadata: {
           checkoutSessionId: session.id,
@@ -72,7 +78,7 @@ export function createCheckoutOrchestrator(): CheckoutOrchestrator {
       });
 
       // 4. Issue invoice
-      await invoiceService.issueInvoice(invoice.id);
+      await invoiceService.issueInvoice(invoice.id, input.tenantId);
 
       // 5. Create license for digital product
       const license = await db
@@ -80,17 +86,9 @@ export function createCheckoutOrchestrator(): CheckoutOrchestrator {
         .values({
           id: uuid(),
           tenantId: input.tenantId,
-          clientId: input.clientId,
-          productId: session.productId!,
-          licenseKey: `lic_${uuid().slice(0, 20)}`,
-          purchaserEmail: input.customerEmail,
+          key: `lic_${uuid().slice(0, 20)}`,
           status: "pending",
-          billingModel: "one_time",
-          metadata: {
-            checkoutSessionId: session.id,
-            invoiceId: invoice.id,
-            paymentId: payment.id,
-          },
+          expiresAt: null,
         })
         .returning();
 
@@ -103,7 +101,7 @@ export function createCheckoutOrchestrator(): CheckoutOrchestrator {
         entries: [
           {
             account: "assets:cash",
-            debitCents: payment.amountCents,
+            debitCents: session.clientRevenueCents + session.platformServicesCents + session.checkoutLicenseFeeCents,
             description: "Cash received from payment",
           },
           {

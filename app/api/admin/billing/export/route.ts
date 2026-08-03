@@ -26,7 +26,7 @@ function isAuthorized(request: NextRequest) {
 
 function toCsvValue(value: unknown) {
   const text = value === null || value === undefined ? "" : typeof value === "string" ? value : JSON.stringify(value);
-  return `"${text.replaceAll('"', '""')}"`;
+  return `"${text.split('"').join('""')}"`;
 }
 
 export async function GET(request: NextRequest) {
@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const tenantId = request.nextUrl.searchParams.get("tenantId")?.trim() || undefined;
+  const tenantId = request.nextUrl.searchParams.get("tenantId")?.trim() || "";
   const rows = await getBillingExportRows(tenantId);
   const header = [
     "recordType",

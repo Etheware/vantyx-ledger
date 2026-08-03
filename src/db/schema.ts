@@ -70,6 +70,105 @@ export const billingExports = pgTable(
   }
 );
 
+export const payments = pgTable("payments", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  invoiceId: text("invoice_id"),
+  customerId: text("customer_id").notNull(),
+  customerEmail: varchar("customer_email", { length: 255 }).notNull(),
+  paymentRail: varchar("payment_rail", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).default("pending").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  currency: varchar("currency", { length: 3 }).default("usd").notNull(),
+  description: text("description"),
+  providerPaymentId: text("provider_payment_id"),
+  processedAt: timestamp("processed_at"),
+  metadata: text("metadata"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const invoices = pgTable("invoices", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  subscriptionId: text("subscription_id"),
+  invoiceNumber: varchar("invoice_number", { length: 64 }).notNull(),
+  customerId: text("customer_id").notNull(),
+  customerEmail: varchar("customer_email", { length: 255 }).notNull(),
+  customerName: varchar("customer_name", { length: 255 }),
+  status: varchar("status", { length: 50 }).default("draft").notNull(),
+  subtotalCents: integer("subtotal_cents").notNull(),
+  taxCents: integer("tax_cents").default(0).notNull(),
+  totalCents: integer("total_cents").notNull(),
+  currency: varchar("currency", { length: 3 }).default("usd").notNull(),
+  description: text("description"),
+  dueAt: timestamp("due_at").notNull(),
+  issuedAt: timestamp("issued_at"),
+  paidAt: timestamp("paid_at"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  metadata: text("metadata"),
+});
+
+export const ledgerEntries = pgTable("ledger_entries", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  invoiceId: text("invoice_id"),
+  paymentId: text("payment_id"),
+  entrySequence: integer("entry_sequence").notNull(),
+  account: varchar("account", { length: 255 }).notNull(),
+  debitCents: integer("debit_cents"),
+  creditCents: integer("credit_cents"),
+  currency: varchar("currency", { length: 3 }).default("usd").notNull(),
+  description: text("description").notNull(),
+  metadata: text("metadata"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const subscriptions = pgTable("subscriptions", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  productId: text("product_id").notNull().references(() => catalogProducts.id, { onDelete: "cascade" }),
+  subscriptionKey: varchar("subscription_key", { length: 64 }).notNull(),
+  customerId: text("customer_id").notNull(),
+  customerEmail: varchar("customer_email", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).default("active").notNull(),
+  billingCycleDays: integer("billing_cycle_days").notNull(),
+  amountCents: integer("amount_cents").notNull(),
+  currency: varchar("currency", { length: 3 }).default("usd").notNull(),
+  currentPeriodStartAt: timestamp("current_period_start_at").notNull(),
+  currentPeriodEndAt: timestamp("current_period_end_at").notNull(),
+  nextBillingAt: timestamp("next_billing_at").notNull(),
+  cancelledAt: timestamp("cancelled_at"),
+  metadata: text("metadata"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const entitlements = pgTable("entitlements", {
+  id: text("id").primaryKey(),
+  tenantId: text("tenant_id").notNull().references(() => tenants.id, { onDelete: "cascade" }),
+  clientId: text("client_id").notNull().references(() => clients.id, { onDelete: "cascade" }),
+  customerId: text("customer_id").notNull(),
+  entitlementKey: varchar("entitlement_key", { length: 64 }).notNull(),
+  feature: varchar("feature", { length: 255 }).notNull(),
+  status: varchar("status", { length: 50 }).default("active").notNull(),
+  quotaLimit: integer("quota_limit"),
+  quotaUsed: integer("quota_used").default(0).notNull(),
+  subscriptionId: text("subscription_id"),
+  licenseId: text("license_id"),
+  activatedAt: timestamp("activated_at").defaultNow().notNull(),
+  revokedAt: timestamp("revoked_at"),
+  expiresAt: timestamp("expires_at"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  metadata: text("metadata"),
+});
+
 export const walletAccessGrants = pgTable(
   "wallet_access_grants",
   {

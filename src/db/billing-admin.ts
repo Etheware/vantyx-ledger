@@ -1,38 +1,88 @@
+type BillingEvent =
+  | { type: "checkout_started"; tenantId: string; checkoutSessionId: string; createdAt: Date }
+  | { type: "checkout_abandoned"; tenantId: string; checkoutSessionId: string; createdAt: Date }
+  | { type: "invoice_downloaded"; tenantId: string; invoiceId: string; amount: number; createdAt: Date }
+  | { type: "invoice_created"; tenantId: string; invoiceId: string; amount: number; createdAt: Date }
+  | { type: "receipt_viewed"; tenantId: string; receiptId: string; createdAt: Date };
+
+type BillingTrend = {
+  revenue: number;
+  transactions: number;
+  averageOrderValue: number;
+};
+
+type BillingExportRow = {
+  id: string;
+  invoiceId?: string;
+  receiptId?: string;
+  description: string;
+  amount: string;
+  status: string;
+  date: string;
+  eventType: BillingEvent["type"];
+  createdAt: Date;
+};
+
+const billingEvents: BillingEvent[] = [];
+
 export async function recordCheckoutStarted(checkoutSessionId: string, tenantId: string) {
-  // TODO: Implement analytics recording
-  console.log(`Checkout started: ${checkoutSessionId} for tenant ${tenantId}`);
+  billingEvents.push({ type: "checkout_started", tenantId, checkoutSessionId, createdAt: new Date() });
 }
 
-export async function recordInvoiceDownloaded(invoiceId: string, tenantId: string) {
-  // TODO: Implement analytics recording
-  console.log(`Invoice downloaded: ${invoiceId} for tenant ${tenantId}`);
+export async function recordInvoiceDownloaded(invoiceId: string, tenantId: string, amount = 0) {
+  billingEvents.push({ type: "invoice_downloaded", tenantId, invoiceId, amount, createdAt: new Date() });
 }
 
 export async function recordReceiptViewed(receiptId: string, tenantId: string) {
-  // TODO: Implement analytics recording
-  console.log(`Receipt viewed: ${receiptId} for tenant ${tenantId}`);
+  billingEvents.push({ type: "receipt_viewed", tenantId, receiptId, createdAt: new Date() });
 }
 
-export async function getBillingExportRows(tenantId: string, startDate: Date, endDate: Date) {
-  // TODO: Implement billing export
-  return [];
+export async function getBillingExportRows(tenantId: string, startDate = new Date(0), endDate = new Date()) {
+  return billingEvents
+    .filter((event) => event.tenantId === tenantId && event.createdAt >= startDate && event.createdAt <= endDate)
+    .filter((event) => event.type === "invoice_downloaded" || event.type === "invoice_created")
+    .map<BillingExportRow>((event, index) => ({
+      id: `${event.type}-${index}`,
+      invoiceId: event.invoiceId,
+      description: event.type === "invoice_created" ? "Invoice created" : "Invoice downloaded",
+      amount: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(event.amount / 100),
+      status: "completed",
+      date: event.createdAt.toLocaleDateString("en-US"),
+      eventType: event.type,
+      createdAt: event.createdAt,
+    }));
 }
 
-export async function getBillingTrends(tenantId: string, period: "day" | "week" | "month") {
-  // TODO: Implement billing trends
+export async function getBillingTrends(tenantId: string, period: "day" | "week" | "month"): Promise<BillingTrend> {
+  const now = new Date();
+  const start = new Date(now);
+  if (period === "day") start.setDate(start.getDate() - 1);
+  if (period === "week") start.setDate(start.getDate() - 7);
+  if (period === "month") start.setDate(start.getDate() - 30);
+
+  const events = billingEvents.filter((event) => event.tenantId === tenantId && event.createdAt >= start && event.createdAt <= now);
+  const completed = events.filter((event) => event.type === "invoice_downloaded" || event.type === "invoice_created");
+  const unique = new Map<string, number>();
+
+  for (const event of completed) {
+    const key = event.invoiceId;
+    if (!unique.has(key)) {
+      unique.set(key, event.amount);
+    }
+  }
+
+  const amounts = [...unique.values()];
   return {
-    revenue: 0,
-    transactions: 0,
-    averageOrderValue: 0,
+    revenue: amounts.reduce((sum, amount) => sum + amount, 0),
+    transactions: amounts.length,
+    averageOrderValue: amounts.length > 0 ? Math.round(amounts.reduce((sum, amount) => sum + amount, 0) / amounts.length) : 0,
   };
 }
 
 export async function recordCheckoutAbandoned(checkoutSessionId: string, tenantId: string) {
-  // TODO: Implement analytics recording
-  console.log(`Checkout abandoned: ${checkoutSessionId} for tenant ${tenantId}`);
+  billingEvents.push({ type: "checkout_abandoned", tenantId, checkoutSessionId, createdAt: new Date() });
 }
 
 export async function recordInvoiceCreated(invoiceId: string, tenantId: string, amount: number) {
-  // TODO: Implement analytics recording
-  console.log(`Invoice created: ${invoiceId} for tenant ${tenantId}, amount: ${amount}`);
+  billingEvents.push({ type: "invoice_created", tenantId, invoiceId, amount, createdAt: new Date() });
 }

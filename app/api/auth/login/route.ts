@@ -76,12 +76,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Email not verified: send OTP
-    const { code, token, expiresAt } = createEmailOtpChallenge(email);
+    const { code, token, expiresAt } = createEmailOtpChallenge();
     await createStoredAuthChallenge({
       email,
       purpose: "email_otp",
       secret: code,
-      expiresAt,
+      expiresAt: new Date(expiresAt),
       metadata: { purpose: "login" },
     });
 

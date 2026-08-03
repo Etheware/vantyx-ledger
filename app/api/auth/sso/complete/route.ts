@@ -6,6 +6,7 @@ import crypto from "crypto";
 
 export async function GET(request: NextRequest) {
   try {
+    const database = db() as any;
     const email = request.nextUrl.searchParams.get("email");
 
     if (!email) {
@@ -15,7 +16,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const user = await db.query.users.findFirst({
+    const user = await database.query.users.findFirst({
       where: eq(users.email, email),
     });
 
@@ -47,6 +48,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const database = db() as any;
     const body = await request.json();
     const { email, token } = body;
 
@@ -57,7 +59,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await db.query.users.findFirst({
+    const user = await database.query.users.findFirst({
       where: eq(users.email, email),
     });
 

@@ -129,7 +129,7 @@ export default function SecurityPage() {
             We take privacy seriously. Your data belongs to you, and we implement strict policies to protect it:
           </p>
           <ul className="space-y-3 pl-6">
-            <li className="list-disc">We never sell or share your data with third parties</li>
+            <li className="list-disc">We limit data sharing to service providers that help us operate payments, hosting, and support</li>
             <li className="list-disc">You maintain full ownership and control of your data</li>
             <li className="list-disc">Data deletion requests are processed within 30 days</li>
             <li className="list-disc">Encrypted backups stored in geographically distributed locations</li>

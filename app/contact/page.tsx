@@ -1,6 +1,7 @@
 
 import Link from "next/link";
 import { Mail, Phone, MapPin, Clock, MessageCircle, Lock } from "lucide-react";
+import { ContactForm } from "./contact-form";
 
 export const metadata = {
   title: "Contact Us | Vantyx Ledger",
@@ -80,54 +81,7 @@ export default function ContactPage() {
             {/* Form */}
             <div>
               <h2 className="text-3xl font-bold">Send us a message</h2>
-              <form className="mt-8 space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-white/80">Name</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition hover:border-white/20 focus:border-blue-500/50 focus:outline-none"
-                    placeholder="Your name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white/80">Email</label>
-                  <input
-                    type="email"
-                    required
-                    className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition hover:border-white/20 focus:border-blue-500/50 focus:outline-none"
-                    placeholder="your@email.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white/80">Subject</label>
-                  <input
-                    type="text"
-                    required
-                    className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition hover:border-white/20 focus:border-blue-500/50 focus:outline-none"
-                    placeholder="How can we help?"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-white/80">Message</label>
-                  <textarea
-                    required
-                    rows={5}
-                    className="mt-2 w-full rounded-lg border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-white/40 transition hover:border-white/20 focus:border-blue-500/50 focus:outline-none"
-                    placeholder="Tell us more..."
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full rounded-lg border border-blue-500/40 bg-blue-500/20 py-3 font-semibold text-blue-300 transition hover:bg-blue-500/30"
-                >
-                  Send Message
-                </button>
-              </form>
+              <ContactForm />
             </div>
 
             {/* Info */}
@@ -163,11 +117,11 @@ export default function ContactPage() {
                   <p className="text-white/70">
                     For account-specific issues, please sign in and use the in-app support feature for faster assistance.
                   </p>
-                  <Link
-                    href="/auth/signin"
-                    className="mt-4 inline-flex items-center gap-2 text-blue-300 hover:text-blue-200"
-                  >
-                    Go to Dashboard →
+                    <Link
+                      href="/auth/login"
+                      className="mt-4 inline-flex items-center gap-2 text-blue-300 hover:text-blue-200"
+                    >
+                      Go to Dashboard →
                   </Link>
                 </div>
               </div>

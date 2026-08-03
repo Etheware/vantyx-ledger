@@ -18,7 +18,10 @@ export async function getOrCreatePersonalOrg(
   email: string,
   companyName?: string
 ): Promise<OrgInfo> {
-  const db = getDatabase();
+  const db = getDatabase() as any;
+  if (!db) {
+    throw new Error("Database unavailable");
+  }
 
   // Generate slug from email (everything before @, sanitized)
   const emailPrefix = email.split("@")[0];
@@ -32,44 +35,48 @@ export async function getOrCreatePersonalOrg(
   const orgName = companyName || emailPrefix;
 
   // Check if org already exists with this slug
-  const existing = await db.query.clients.findFirst({
-    where: eq(clients.clientSlug, slug),
+  const existing = await db.query.tenants.findFirst({
+    where: eq(tenants.slug, slug),
   });
 
   if (existing) {
-    return {
-      uuid: existing.id,
-      slug: existing.clientSlug,
-      name: existing.publicName,
-    };
+    return { uuid: existing.id, slug: existing.slug, name: existing.name };
   }
 
-  // Create a tenant (top-level organization)
-  const [tenant] = await db
-    .insert(tenants)
-    .values({
-      clientKey: `vk_${slug}_${uuid().slice(0, 8)}`,
-      publicName: orgName,
-      supportEmail: email,
-      supportUrl: "https://support.vantyxledger.com",
-    })
-    .returning();
+  const uniqueSlug = `${slug}-${uuid().slice(0, 8)}`;
 
-  // Create a client under the tenant
-  const [client] = await db
-    .insert(clients)
-    .values({
-      tenantId: tenant.id,
-      clientName: orgName,
-      clientSlug: slug,
-      publicName: orgName,
-      supportEmail: email,
-    })
-    .returning();
+  const result = await db.transaction(async (tx: any) => {
+    const [tenant] = await tx
+      .insert(tenants)
+      .values({
+        id: uuid(),
+        name: orgName,
+        slug: uniqueSlug,
+        ownerId: uuid(),
+        supportEmail: email,
+      })
+      .returning();
 
-  return {
-    uuid: client.id,
-    slug: client.clientSlug,
-    name: client.publicName,
-  };
+    if (!tenant) {
+      throw new Error("Failed to create tenant");
+    }
+
+    const [client] = await tx
+      .insert(clients)
+      .values({
+        id: uuid(),
+        tenantId: tenant.id,
+        name: orgName,
+        secret: `vk_${uniqueSlug}_${uuid().slice(0, 8)}`,
+      })
+      .returning();
+
+    if (!client) {
+      throw new Error("Failed to create client");
+    }
+
+    return client;
+  });
+
+  return { uuid: result.tenantId, slug: uniqueSlug, name: result.name };
 }

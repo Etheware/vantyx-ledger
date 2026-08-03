@@ -50,21 +50,31 @@ const BEP_BRANDING = {
 };
 
 async function seedBEPTenant() {
-  const db = getDatabase();
+  const db = getDatabase() as any;
+  if (!db) {
+    throw new Error("Database unavailable");
+  }
 
   console.log("🌱 Seeding Backflow Exam Prep tenant...\n");
 
   try {
     // 1. Ensure BEP tenant exists
     let bepTenant = await db.query.tenants.findFirst({
-      where: eq(tenants.clientKey, BEP_TENANT_CONFIG.clientKey),
+      where: eq(tenants.slug, BEP_TENANT_CONFIG.clientKey),
     });
 
     if (!bepTenant) {
       console.log("  Creating BEP tenant record...");
       const inserted = await db
         .insert(tenants)
-        .values(BEP_TENANT_CONFIG)
+        .values({
+          id: `tenant_${BEP_TENANT_CONFIG.clientKey}`,
+          name: BEP_TENANT_CONFIG.publicName,
+          slug: BEP_TENANT_CONFIG.clientKey,
+          ownerId: "seed-owner",
+          supportEmail: BEP_TENANT_CONFIG.supportEmail,
+          brandColor: BEP_TENANT_CONFIG.brandColor,
+        })
         .returning();
       bepTenant = inserted[0];
       console.log(`  ✓ BEP tenant created: ${bepTenant.id}\n`);
@@ -74,14 +84,20 @@ async function seedBEPTenant() {
 
     // 2. Ensure product exists
     let product = await db.query.catalogProducts.findFirst({
-      where: eq(catalogProducts.productKey, BEP_PRODUCT_CONFIG.productKey),
+      where: eq(catalogProducts.key, BEP_PRODUCT_CONFIG.productKey),
     });
 
     if (!product) {
       console.log("  Creating weekly-learning-license product...");
       const inserted = await db
         .insert(catalogProducts)
-        .values(BEP_PRODUCT_CONFIG)
+        .values({
+          id: `product_${BEP_PRODUCT_CONFIG.productKey}`,
+          tenantId: bepTenant.id,
+          key: BEP_PRODUCT_CONFIG.productKey,
+          name: BEP_PRODUCT_CONFIG.neutralName,
+          description: BEP_PRODUCT_CONFIG.neutralDescription,
+        })
         .returning();
       product = inserted[0];
       console.log(`  ✓ Product created: ${product.id}\n`);
@@ -91,15 +107,16 @@ async function seedBEPTenant() {
 
     // 3. Ensure tenant branding exists
     const existingBranding = await db.query.tenantProductBranding.findFirst({
-      where: (table) => eq(table.tenantId, bepTenant!.id),
+      where: (table: any) => eq(table.tenantId, bepTenant!.id),
     });
 
     if (!existingBranding) {
       console.log("  Creating BEP branding configuration...");
       await db.insert(tenantProductBranding).values({
+        id: `branding_${bepTenant.id}_${product.id}`,
         tenantId: bepTenant.id,
         productId: product.id,
-        ...BEP_BRANDING,
+        primaryColor: BEP_TENANT_CONFIG.brandColor,
       });
       console.log("  ✓ Branding configured\n");
     } else {
@@ -108,7 +125,7 @@ async function seedBEPTenant() {
 
     // 4. Verify client record exists (legacy, for backward compatibility)
     let client = await db.query.clients.findFirst({
-      where: (table) => eq(table.tenantId, bepTenant!.id),
+      where: (table: any) => eq(table.tenantId, bepTenant!.id),
     });
 
     if (!client) {
@@ -116,11 +133,10 @@ async function seedBEPTenant() {
       const inserted = await db
         .insert(clients)
         .values({
+          id: `client_${BEP_TENANT_CONFIG.clientKey}`,
           tenantId: bepTenant.id,
-          clientName: "Backflow Exam Prep",
-          clientSlug: "bep",
-          publicName: "Backflow Exam Prep",
-          supportEmail: "support@backflowexamprep.com",
+          name: "Backflow Exam Prep",
+          secret: `client_${BEP_TENANT_CONFIG.clientKey}`,
         })
         .returning();
       console.log(`  ✓ Client record created: ${inserted[0].id}\n`);

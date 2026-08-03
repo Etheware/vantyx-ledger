@@ -1,4 +1,5 @@
 
+import crypto from "crypto";
 /**
  * Vantyx AuthSession — Server-Side, Opaque Token Session Management
  *
@@ -257,8 +258,7 @@ export function resolveCapabilities(
  * Generate a cryptographically secure session ID.
  */
 function generateSessionId(): string {
-  // In production, use crypto.randomBytes() or similar
-  return `sess_${Math.random().toString(36).substr(2, 16)}${Date.now().toString(36)}`;
+  return `sess_${crypto.randomBytes(32).toString("base64url")}`;
 }
 
 /**
