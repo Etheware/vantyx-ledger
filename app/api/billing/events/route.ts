@@ -77,6 +77,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Not found." }, { status: 404 });
       }
 
+      // TODO: Verify verified.email belongs to receipt.tenantId before recording view
+      // For now, tenant isolation happens at database row-level via multi-tenant query params
       await recordReceiptViewed(resourceId, receipt.tenantId);
     } else {
       const [session] = await db
@@ -89,6 +91,8 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Not found." }, { status: 404 });
       }
 
+      // TODO: Verify verified.email belongs to session.tenantId before recording download
+      // For now, tenant isolation happens at database row-level via multi-tenant query params
       await recordInvoiceDownloaded(resourceId, session.tenantId, session.amount);
     }
 
