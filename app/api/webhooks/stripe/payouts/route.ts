@@ -12,19 +12,50 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const body = await request.text();
     const secret = process.env.STRIPE_WEBHOOK_SECRET || "";
+    if (!secret) {
+      return NextResponse.json(
+        { error: "Webhook secret not configured" },
+        { status: 500 }
+      );
+    }
 
-    const hash = crypto
+    const body = await request.text();
+
+    const parts = signature.split(",").reduce((acc: Record<string, string>, part: string) => {
+      const [key, value] = part.split("=");
+      acc[key] = value;
+      return acc;
+    }, {});
+
+    const timestamp = parts.t;
+    const v1Signature = parts.v1;
+
+    if (!timestamp || !v1Signature) {
+      return NextResponse.json(
+        { error: "Invalid signature format" },
+        { status: 400 }
+      );
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const signedContent = `${timestamp}.${body}`;
+
+    const expectedSignature = crypto
       .createHmac("sha256", secret)
-      .update(body)
+      .update(signedContent)
       .digest("hex");
 
-    const [timestamp, hash_sig] = signature.split(",").map((s) => s.split("=")[1]);
-
-    if (hash !== hash_sig) {
+    if (!crypto.timingSafeEqual(Buffer.from(v1Signature), Buffer.from(expectedSignature))) {
       return NextResponse.json(
         { error: "Invalid signature" },
+        { status: 401 }
+      );
+    }
+
+    if (Math.abs(now - parseInt(timestamp)) > 300) {
+      return NextResponse.json(
+        { error: "Signature timestamp outside tolerance window" },
         { status: 401 }
       );
     }
