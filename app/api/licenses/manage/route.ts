@@ -24,9 +24,15 @@ export async function GET(request: NextRequest) {
   try {
     const db = require("@/lib/db-compat").getDatabase?.() as any;
     if (db) {
-      const userTenants = await db.query.userTenants?.findFirst({
-        where: (t: any) => t.email === verified.email && t.tenantId === tenantId,
-      }).catch(() => null);
+      let userTenants;
+      try {
+        userTenants = await db.query.userTenants?.findFirst({
+          where: (t: any) => t.email === verified.email && t.tenantId === tenantId,
+        });
+      } catch (error) {
+        console.error("Tenant access check failed:", error);
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
       if (!userTenants) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
@@ -78,9 +84,15 @@ export async function POST(request: NextRequest) {
   try {
     const db = require("@/lib/db-compat").getDatabase?.() as any;
     if (db) {
-      const userTenants = await db.query.userTenants?.findFirst({
-        where: (t: any) => t.email === verified.email && t.tenantId === tenantId,
-      }).catch(() => null);
+      let userTenants;
+      try {
+        userTenants = await db.query.userTenants?.findFirst({
+          where: (t: any) => t.email === verified.email && t.tenantId === tenantId,
+        });
+      } catch (error) {
+        console.error("Tenant access check failed:", error);
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
       if (!userTenants) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }

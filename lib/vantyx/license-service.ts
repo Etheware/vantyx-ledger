@@ -103,10 +103,12 @@ export function createLicenseService(): LicenseService {
       }
 
       const results = await db.query.licenses.findMany({
-        where: eq(licenses.tenantId, tenantId),
+        where: and(
+          eq(licenses.tenantId, tenantId)
+        ),
       });
 
-      return results;
+      return results.filter((lic: any) => lic.customerId === customerId || !customerId);
     },
 
     async suspendLicense(licenseId, tenantId) {
