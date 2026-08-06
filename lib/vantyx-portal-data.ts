@@ -1,4 +1,7 @@
 
+import { and, desc, eq } from "drizzle-orm";
+import { getDatabase, entitlements, licenses, payments, tenants } from "@/lib/db-compat";
+
 export type BillingInvoice = {
   id: string;
   date: string;
@@ -125,3 +128,123 @@ export const portalTransactions: PortalTransaction[] = [
   { id: "txn-8599", provider: "stripe", paymentRail: "card", status: "refunded", amount: "$249.00", processedAt: "Feb 14, 2025" },
   { id: "txn-8542", provider: "plaid", paymentRail: "bank_transfer", status: "failed", amount: "$99.00", processedAt: "Feb 1, 2025" },
 ];
+
+export type LivePortalLicense = {
+  id: string;
+  licenseKey: string;
+  productName: string;
+  customerLabel: string;
+  status: "active" | "pending" | "expired" | "revoked";
+  activatedAt: string;
+  expiresAt: string | null;
+};
+
+function formatDate(value: Date | string | null | undefined): string {
+  if (!value) {
+    return "Unknown";
+  }
+
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown";
+  }
+
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+function normalizePaymentStatus(status: string): PortalTransaction["status"] {
+  if (status === "completed" || status === "paid") {
+    return "settled";
+  }
+  if (status === "processing" || status === "pending") {
+    return "processing";
+  }
+  if (status === "refunded") {
+    return "refunded";
+  }
+  return "failed";
+}
+
+export async function getPortalLicenses(tenantId: string | null | undefined): Promise<LivePortalLicense[]> {
+  const db = getDatabase() as any;
+  if (!db || !tenantId) {
+    return [];
+  }
+
+  const rows = await db
+    .select({
+      id: licenses.id,
+      licenseKey: licenses.key,
+      status: licenses.status,
+      activatedAt: licenses.createdAt,
+      expiresAt: licenses.expiresAt,
+      customerId: entitlements.customerId,
+      productLabel: entitlements.feature,
+    })
+    .from(licenses)
+    .leftJoin(entitlements, eq(entitlements.licenseId, licenses.id))
+    .where(eq(licenses.tenantId, tenantId))
+    .orderBy(desc(licenses.createdAt))
+    .limit(100);
+
+  return rows.map((row: any) => ({
+    id: row.id,
+    licenseKey: row.licenseKey,
+    productName: row.productLabel || "License access",
+    customerLabel: row.customerId || "Unassigned",
+    status: (row.status || "pending") as LivePortalLicense["status"],
+    activatedAt: formatDate(row.activatedAt),
+    expiresAt: row.expiresAt ? formatDate(row.expiresAt) : null,
+  }));
+}
+
+export async function getPortalTransactions(tenantId: string | null | undefined): Promise<PortalTransaction[]> {
+  const db = getDatabase() as any;
+  if (!db || !tenantId) {
+    return [];
+  }
+
+  const rows = await db
+    .select({
+      id: payments.id,
+      paymentRail: payments.paymentRail,
+      status: payments.status,
+      amountCents: payments.amountCents,
+      createdAt: payments.createdAt,
+      processedAt: payments.processedAt,
+    })
+    .from(payments)
+    .where(eq(payments.tenantId, tenantId))
+    .orderBy(desc(payments.createdAt))
+    .limit(100);
+
+  return rows.map((row: any) => ({
+    id: row.id,
+    provider: row.paymentRail?.startsWith("stripe") ? "stripe" : "plaid",
+    paymentRail: row.paymentRail?.includes("bank") ? "bank_transfer" : "card",
+    status: normalizePaymentStatus(row.status),
+    amount: `$${((row.amountCents || 0) / 100).toFixed(2)}`,
+    processedAt: formatDate(row.processedAt || row.createdAt),
+  }));
+}
+
+export async function getWorkspaceOptions(): Promise<string[]> {
+  const db = getDatabase() as any;
+  if (!db) {
+    return [];
+  }
+
+  const rows = await db
+    .select({
+      name: tenants.name,
+    })
+    .from(tenants)
+    .orderBy(desc(tenants.createdAt))
+    .limit(5);
+
+  return rows.map((row: any) => row.name).filter(Boolean);
+}

@@ -13,10 +13,13 @@ export async function createCheckoutSession(
   productKey: string,
   priceInCents: number,
   successUrl: string,
-  cancelUrl: string
+  cancelUrl: string,
+  metadata: Record<string, string> = {}
 ) {
   const session = await stripe.checkout.sessions.create({
     customer_email: email,
+    client_reference_id: metadata.checkoutToken,
+    metadata,
     line_items: [
       {
         price_data: {

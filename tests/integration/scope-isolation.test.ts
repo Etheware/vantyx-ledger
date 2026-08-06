@@ -1,4 +1,6 @@
 
+/* eslint-env jest */
+
 import { describe, test, expect } from "@jest/globals";
 
 describe("Scope Data Isolation", () => {
@@ -37,7 +39,6 @@ describe("Scope Data Isolation", () => {
     });
 
     test("User cannot access project outside their organization", () => {
-      const userOrgs = ["org_acme"];
       const userProjects = [
         { id: "proj_1", orgId: "org_acme" },
         { id: "proj_2", orgId: "org_acme" },

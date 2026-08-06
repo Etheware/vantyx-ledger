@@ -1,5 +1,4 @@
 import { getDatabase, paymentEvents } from "@/lib/db-compat";
-import { eq, and, gte, lte, sum, desc } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
 
 type BillingEvent =

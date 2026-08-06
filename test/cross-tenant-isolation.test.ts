@@ -1,10 +1,13 @@
 
+/* global require */
+
 const assert = require("node:assert/strict");
 const { test } = require("node:test");
+const { Buffer } = require("node:buffer");
 const { getTenantProductBranding, BrandingNotFoundError } = require("../src/tenants/get-tenant-branding");
 const { verifyLicenseClaimToken, createLicenseClaimToken } = require("../lib/billing/license-claim");
 const { verifyCheckoutSessionToken, createCheckoutSessionToken } = require("../lib/billing/checkout-session");
-const { resolveTenantContextFromSession, TenantContextError } = require("../lib/auth/tenant-context");
+const { resolveTenantContextFromSession } = require("../lib/auth/tenant-context");
 
 /**
  * Cross-Tenant Isolation Test Suite
@@ -65,7 +68,7 @@ test("License Claim Tokens - claim token cannot be forged to claim in different 
     track: "individual",
   });
 
-  const [encoded, signature] = claim.token.split(".");
+  const [, signature] = claim.token.split(".");
   const tamperedPayload = Buffer.from(
     JSON.stringify({
       tenantId: TENANT_B.id,
@@ -117,7 +120,7 @@ test("Checkout Session Tokens - checkout token cannot be forged for different te
     metadata: {},
   });
 
-  const [encoded, signature] = session.token.split(".");
+  const [, signature] = session.token.split(".");
   const tamperedPayload = Buffer.from(
     JSON.stringify({
       tenantId: TENANT_B.id,

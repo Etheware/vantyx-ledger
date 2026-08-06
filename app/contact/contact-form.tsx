@@ -1,5 +1,7 @@
 "use client";
 
+/* global fetch, FormData, HTMLFormElement */
+
 import type { FormEvent } from "react";
 import { useState } from "react";
 

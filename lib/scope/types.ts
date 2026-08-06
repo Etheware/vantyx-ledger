@@ -26,12 +26,14 @@ export interface Scope {
 
 export interface ScopeContextType {
   currentScope: Scope | null;
-  setScope: (scope: Scope) => Promise<void>;
+  // eslint-disable-next-line no-unused-vars
+  setScope: (_scope: Scope) => Promise<void>;
   userOrganizations: Organization[];
   userProjects: Project[];
   isLoading: boolean;
   error: Error | null;
-  hasAccess: (scope: Scope) => boolean;
+  // eslint-disable-next-line no-unused-vars
+  hasAccess: (_scope: Scope) => boolean;
   clearScope: () => void;
 }
 

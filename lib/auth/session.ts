@@ -258,7 +258,11 @@ export function resolveCapabilities(
  * Generate a cryptographically secure session ID.
  */
 function generateSessionId(): string {
-  return `sess_${crypto.randomBytes(32).toString("base64url")}`;
+  const bytes = new Uint8Array(32);
+  globalThis.crypto.getRandomValues(bytes);
+  const b64 = Buffer.from(bytes).toString("base64");
+  const urlSafe = b64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  return `sess_${urlSafe}`;
 }
 
 /**

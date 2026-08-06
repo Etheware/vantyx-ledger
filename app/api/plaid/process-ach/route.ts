@@ -4,7 +4,7 @@ import { canWithdraw } from "@/lib/auth";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { userId, tenantId, publicToken, accountId, amount } = body;
+    const { userId, tenantId, publicToken, amount } = body;
 
     if (!userId || !tenantId || !publicToken || !amount) {
       return NextResponse.json(

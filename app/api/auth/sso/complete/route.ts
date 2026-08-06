@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getDatabase as db } from "@/lib/db-compat";
 import { users } from "@/lib/db-compat";
 import { eq } from "drizzle-orm";
-import crypto from "crypto";
+import { randomUUID } from "crypto";
 
 export async function GET(request: NextRequest) {
   try {
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const token = crypto.randomBytes(32).toString("hex");
+    const token = randomUUID();
     const response = NextResponse.redirect(new URL("/dashboard", request.url), {
       status: 303,
     });

@@ -1,4 +1,6 @@
 
+/* global Buffer */
+
 import { timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { getBillingTrends } from "../../../../../src/db/billing-admin";

@@ -1,7 +1,9 @@
 
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+/* global KeyboardEvent, MouseEvent, Node, HTMLDivElement */
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSession } from "@/lib/auth/session-provider";
 import { useCapabilities } from "@/hooks/use-capabilities";

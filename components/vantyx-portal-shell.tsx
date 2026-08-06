@@ -23,6 +23,7 @@ type ShellProps = {
   activePath?: string;
   children: ReactNode;
   actions?: ReactNode;
+  organizationName?: string;
 };
 
 const primaryNav = [
@@ -99,7 +100,7 @@ function MobilePortalNav({ open, onClose, activePath }: { open: boolean; onClose
   );
 }
 
-export function VantyxPortalShell({ title, description, activePath = "/billing", actions, children }: ShellProps) {
+export function VantyxPortalShell({ title, description, activePath = "/billing", actions, children, organizationName = "Acme Corporation" }: ShellProps) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
@@ -121,7 +122,7 @@ export function VantyxPortalShell({ title, description, activePath = "/billing",
               type="button"
               className="flex h-14 w-full items-center justify-between rounded-[14px] border border-white/10 bg-white/[0.03] px-4 text-left text-[14px] text-white/88"
             >
-              <span>Acme Corporation</span>
+              <span>{organizationName}</span>
               <ChevronDown className="h-4 w-4 text-white/52" />
             </button>
           </div>
@@ -193,7 +194,7 @@ export function VantyxPortalShell({ title, description, activePath = "/billing",
                 <HelpCircle className="h-5 w-5" />
               </button>
               <button type="button" className="flex items-center gap-3 rounded-full border border-white/10 bg-black/25 px-3 py-2.5 text-left">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-[18px] text-white/84">EA</div>
+                <div className="flex h-11 w-11 items-center justify-center rounded-full border border-white/10 text-[18px] text-white/84">{organizationName.slice(0, 2).toUpperCase()}</div>
                 <div className="hidden xl:block">
                   <div className="text-[13px] uppercase tracking-[0.18em] text-white">James Park</div>
                   <div className="text-[11px] uppercase tracking-[0.18em] text-white/42">Admin</div>

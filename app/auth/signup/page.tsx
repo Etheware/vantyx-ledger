@@ -1,5 +1,7 @@
 "use client";
 
+/* global fetch, HTMLFormElement */
+
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 

@@ -3,10 +3,13 @@
 
 import React from "react";
 
+/* eslint-disable no-unused-vars -- TypeScript callback/type parameter false positives. */
+
 interface ScopeSelectorProps {
   label: string;
   items: Array<{ id: string; name: string }>;
   selectedId?: string;
+  // eslint-disable-next-line no-unused-vars
   onChange: (id: string) => void;
   disabled?: boolean;
   placeholder?: string;
@@ -58,6 +61,7 @@ export function EnvironmentSelector({
     <div className="mb-4">
       <label className="block text-sm font-medium mb-2">Environment</label>
       <div className="flex gap-4">
+        {/* eslint-disable no-unused-vars */}
         {["test", "live"].map((env) => (
           <label key={env} className="flex items-center gap-2">
             <input
@@ -71,7 +75,10 @@ export function EnvironmentSelector({
             <span className="text-sm capitalize">{env}</span>
           </label>
         ))}
+        {/* eslint-enable no-unused-vars */}
       </div>
     </div>
   );
 }
+
+/* eslint-enable no-unused-vars */

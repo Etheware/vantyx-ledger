@@ -15,7 +15,8 @@ export function hasOrgAccess(userPerms: UserPermissions[], orgId: string): boole
 export function hasProjectAccess(
   userPerms: UserPermissions[],
   orgId: string,
-  projectId: string
+  // eslint-disable-next-line no-unused-vars
+  _projectId: string
 ): boolean {
   return hasOrgAccess(userPerms, orgId);
 }

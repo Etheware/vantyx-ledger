@@ -1,7 +1,6 @@
 import { Connection, PublicKey } from "@solana/web3.js";
 
 const RPC_ENDPOINT = process.env.SOLANA_RPC_ENDPOINT || "https://api.mainnet-beta.solana.com";
-const USDC_MINT = new PublicKey("EPjFWaLb3odcccccccccccccccccccccccccccccccccc");
 const VANTYX_WALLET = process.env.SOLANA_VAULT_PUBLIC_KEY || "";
 
 const connection = new Connection(RPC_ENDPOINT);

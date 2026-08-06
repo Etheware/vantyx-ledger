@@ -106,6 +106,10 @@ export async function verifyManualPayment(
   // 3. Mark payment as verified in database
   // 4. Trigger ledger entries and invoice issuance
 
+  // Verification is intentionally a stub; these values belong to the future provider flow.
+  void tenantId;
+  void verificationCode;
+
   return {
     success: true,
     paymentId,
@@ -116,6 +120,7 @@ export async function verifyManualPayment(
 export async function getManualPaymentInstructions(
   paymentId: string
 ): Promise<ManualPaymentInstructions | null> {
+  void paymentId;
   // In production, look up from database
   // For now, return null to indicate not found
   return null;

@@ -20,6 +20,8 @@ export interface CreateInvoiceInput {
   metadata?: Record<string, any>;
 }
 
+/* Interface parameters are part of the service contract even when an implementation is a stub. */
+/* eslint-disable no-unused-vars */
 export interface InvoiceService {
   createInvoice(input: CreateInvoiceInput): Promise<any>;
   issueInvoice(invoiceId: string, tenantId: string): Promise<void>;
@@ -27,6 +29,7 @@ export interface InvoiceService {
   getInvoice(invoiceId: string, tenantId: string): Promise<any | null>;
   getInvoicesByCustomer(customerId: string, tenantId: string): Promise<any[]>;
 }
+/* eslint-enable no-unused-vars */
 
 async function generateInvoiceNumber(tenantId: string): Promise<string> {
   const db = getDatabase() as any;

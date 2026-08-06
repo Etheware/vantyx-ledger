@@ -17,6 +17,8 @@ export interface CreateSubscriptionInput {
   metadata?: Record<string, any>;
 }
 
+/* Interface parameters are part of the service contract even when an implementation is a stub. */
+/* eslint-disable no-unused-vars */
 export interface SubscriptionService {
   createSubscription(input: CreateSubscriptionInput): Promise<any>;
   cancelSubscription(subscriptionId: string): Promise<void>;
@@ -26,6 +28,7 @@ export interface SubscriptionService {
   getSubscriptionsByCustomer(customerId: string, tenantId: string): Promise<any[]>;
   getDueForBilling(daysAhead?: number): Promise<any[]>;
 }
+/* eslint-enable no-unused-vars */
 
 export function createSubscriptionService(): SubscriptionService {
   return {

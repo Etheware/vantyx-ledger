@@ -1,3 +1,5 @@
+/* global Buffer */
+
 import crypto from "crypto";
 
 export interface CheckoutSessionPayload {
@@ -5,6 +7,7 @@ export interface CheckoutSessionPayload {
   productKey: string;
   priceCents: number;
   currency: string;
+  clientId?: string;
   tenantId?: string;
   customerEmail?: string | null;
   customerName?: string | null;

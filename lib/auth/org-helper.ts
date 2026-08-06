@@ -1,6 +1,6 @@
 
 import { v4 as uuid } from "uuid";
-import { getDatabase, clients, tenants } from "@/lib/db-compat";
+import { getDatabase, clients, tenants, users } from "@/lib/db-compat";
 import { eq } from "drizzle-orm";
 
 export type OrgInfo = {
@@ -43,6 +43,14 @@ export async function getOrCreatePersonalOrg(
     return { uuid: existing.id, slug: existing.slug, name: existing.name };
   }
 
+  const user = await db.query.users.findFirst({
+    where: eq(users.email, email),
+  });
+
+  if (!user) {
+    throw new Error("User not found");
+  }
+
   const uniqueSlug = `${slug}-${uuid().slice(0, 8)}`;
 
   const result = await db.transaction(async (tx: any) => {
@@ -52,7 +60,7 @@ export async function getOrCreatePersonalOrg(
         id: uuid(),
         name: orgName,
         slug: uniqueSlug,
-        ownerId: uuid(),
+        ownerId: user.id,
         supportEmail: email,
       })
       .returning();

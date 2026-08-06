@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create or get user
-    const user = await findOrCreateAuthUser(email);
+    await findOrCreateAuthUser(email);
 
     // Set password (overwrites if already set)
     await setUserPassword(email, password);

@@ -1,5 +1,7 @@
 "use client";
 
+/* global fetch */
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
@@ -14,7 +16,7 @@ export default function CheckoutPage({
   useEffect(() => {
     async function fetchCheckout() {
       try {
-        const res = await fetch(`/api/billing/checkout/${params.token}`);
+        const res = await fetch(`/api/billing/checkout/${encodeURIComponent(params.token)}`);
         if (!res.ok) throw new Error("Failed to load checkout");
         const data = await res.json();
         setCheckoutData(data);
@@ -117,36 +119,21 @@ export default function CheckoutPage({
           borderBottom: "1px solid #e5e7eb",
         }}>
           <p style={{ fontWeight: "bold", marginBottom: "0.5rem" }}>Payment Method</p>
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: "1rem",
-          }}>
-            <Link href={`/checkout/${params.token}/card`}>
-              <div style={{
-                padding: "1rem",
-                border: "2px solid #3b82f6",
-                borderRadius: "4px",
-                textAlign: "center",
-                cursor: "pointer",
-                backgroundColor: "#f0f9ff",
-              }}>
-                <p style={{ fontWeight: "bold" }}>💳 Credit Card</p>
-              </div>
-            </Link>
-
-            <Link href={`/checkout/${params.token}/bank-connect`}>
-              <div style={{
-                padding: "1rem",
-                border: "1px solid #e5e7eb",
-                borderRadius: "4px",
-                textAlign: "center",
-                cursor: "pointer",
-              }}>
-                <p style={{ fontWeight: "bold" }}>🏦 Bank Transfer</p>
-              </div>
-            </Link>
-          </div>
+          <Link href={`/checkout/${encodeURIComponent(params.token)}/review`}>
+            <div style={{
+              padding: "1rem",
+              border: "2px solid #3b82f6",
+              borderRadius: "4px",
+              textAlign: "center",
+              cursor: "pointer",
+              backgroundColor: "#f0f9ff",
+            }}>
+              <p style={{ fontWeight: "bold" }}>Stripe-hosted checkout</p>
+              <p style={{ fontSize: "0.875rem", color: "#6b7280", marginTop: "0.25rem" }}>
+                Pay securely on Stripe and return to this tokenized flow.
+              </p>
+            </div>
+          </Link>
         </div>
 
         <div style={{

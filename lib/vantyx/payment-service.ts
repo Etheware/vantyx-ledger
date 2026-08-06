@@ -1,6 +1,6 @@
 
 import { eq, and } from "drizzle-orm";
-import { getDatabase, payments, invoices } from "@/lib/db-compat";
+import { getDatabase, payments } from "@/lib/db-compat";
 import { v4 as uuid } from "uuid";
 
 export type PaymentStatus = "pending" | "processing" | "completed" | "failed" | "refunded";
@@ -19,12 +19,15 @@ export interface CreatePaymentInput {
   metadata?: Record<string, any>;
 }
 
+/* Interface parameters are part of the service contract even when an implementation is a stub. */
+/* eslint-disable no-unused-vars */
 export interface PaymentService {
   createPayment(input: CreatePaymentInput): Promise<any>;
   updatePaymentStatus(paymentId: string, tenantId: string, status: PaymentStatus, providerPaymentId?: string): Promise<void>;
   getPayment(paymentId: string, tenantId: string): Promise<any | null>;
   getPaymentsByInvoice(invoiceId: string, tenantId: string): Promise<any[]>;
 }
+/* eslint-enable no-unused-vars */
 
 export function createPaymentService(): PaymentService {
   return {

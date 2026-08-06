@@ -1,9 +1,10 @@
 
+/* global Buffer */
+
+import { TextEncoder } from "util";
 import crypto from "crypto";
-import { and, desc, eq, gt, isNull, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
-  authBackupCodeBatches,
-  authBackupCodes,
   authChallenges,
   authUsers,
   getDatabase,
@@ -68,28 +69,39 @@ function hashValue(value: string) {
   return crypto.createHmac("sha256", secret).update(value).digest("hex");
 }
 
-function hashPassword(password: string) {
-  const salt = crypto.randomBytes(16).toString("hex");
-  const derived = crypto.scryptSync(password, salt, 64).toString("hex");
+async function sha256Hex(input: string) {
+  const bytes = new TextEncoder().encode(input);
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", bytes);
+  return Buffer.from(digest).toString("hex");
+}
+
+async function hashPassword(password: string) {
+  const saltBytes = new Uint8Array(16);
+  globalThis.crypto.getRandomValues(saltBytes);
+  const salt = Buffer.from(saltBytes).toString("hex");
+  const derived = await sha256Hex(`${salt}:${password}`);
   return `${salt}:${derived}`;
 }
 
-function verifyPasswordHash(password: string, value: string) {
+async function verifyPasswordHash(password: string, value: string) {
   const [salt, stored] = value.split(":");
   if (!salt || !stored) {
     return false;
   }
 
-  const derived = crypto.scryptSync(password, salt, 64).toString("hex");
-  const expected = Buffer.from(stored, "hex");
-  const actual = Buffer.from(derived, "hex");
-  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+  const derived = await sha256Hex(`${salt}:${password}`);
+  return derived === stored;
 }
 
 function randomBackupCode() {
   const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const randomIndex = (max: number) => {
+    const value = new Uint32Array(1);
+    globalThis.crypto.getRandomValues(value);
+    return value[0] % max;
+  };
   const makeChunk = () =>
-    Array.from({ length: 4 }, () => alphabet[crypto.randomInt(0, alphabet.length)]).join("");
+    Array.from({ length: 4 }, () => alphabet[randomIndex(alphabet.length)]).join("");
   return `${makeChunk()}-${makeChunk()}-${makeChunk()}`;
 }
 
@@ -99,7 +111,7 @@ export async function findOrCreateAuthUser(email: string) {
   const normalizedEmail = normalizeEmail(email);
   const [created] = await db
     .insert(authUsers)
-    .values({ email: normalizedEmail, passwordHash: hashPassword(crypto.randomUUID()) })
+    .values({ email: normalizedEmail, passwordHash: await hashPassword(crypto.randomUUID()) })
     .onConflictDoUpdate({
       target: authUsers.email,
       set: { email: normalizedEmail },
@@ -124,7 +136,7 @@ export async function setUserPassword(email: string, password: string) {
   const user = await findOrCreateAuthUser(email);
   const [updated] = await db
     .update(authUsers)
-    .set({ passwordHash: hashPassword(password) })
+    .set({ passwordHash: await hashPassword(password) })
     .where(eq(authUsers.id, user.id))
     .returning();
 
@@ -139,7 +151,7 @@ export async function authenticateUser(email: string, password: string) {
     where: eq(authUsers.email, normalizedEmail),
   });
 
-  if (!user?.passwordHash || !verifyPasswordHash(password, user.passwordHash)) {
+  if (!user?.passwordHash || !(await verifyPasswordHash(password, user.passwordHash))) {
     return null;
   }
 
@@ -161,6 +173,7 @@ export async function createStoredAuthChallenge({
   expiresAt: Date;
   metadata?: Record<string, unknown>;
 }) {
+  void metadata;
   const db = getDatabase() as any;
   if (!db) throw new Error("Database unavailable");
   const user = await findOrCreateAuthUser(email);
@@ -176,6 +189,7 @@ export async function createStoredAuthChallenge({
   };
   challenges.set(record.id, record);
   await db.insert(authChallenges).values({
+    id: record.id,
     userId: user.id,
     code: hashValue(secret),
     type: purpose,

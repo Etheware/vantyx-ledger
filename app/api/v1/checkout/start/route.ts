@@ -142,9 +142,7 @@ export async function POST(request: NextRequest) {
 
     // 8. Create Vantyx checkout session
     const checkoutSessionId = uuid();
-    const paymentIntentId = uuid();
-
-    const checkoutSession = await db.insert(checkoutSessions).values({
+    await db.insert(checkoutSessions).values({
       id: checkoutSessionId,
       token: checkoutSessionId,
       userId: tenant.ownerId,

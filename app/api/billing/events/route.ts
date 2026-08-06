@@ -10,7 +10,7 @@ import {
 import { verifyCheckoutSessionToken } from "../../../../lib/billing/checkout-session";
 import { EMAIL_VERIFIED_COOKIE, readVerifiedEmailToken } from "../../../../lib/auth/email-code";
 import { getDatabase } from "../../../../src/db/client";
-import { checkoutSessions, receipts, users } from "../../../../src/db/schema";
+import { receipts, tenants, users } from "../../../../src/db/schema";
 
 export async function POST(request: NextRequest) {
   const body = (await request.json().catch(() => null)) as
@@ -66,56 +66,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Database unavailable." }, { status: 503 });
     }
 
+    const [receipt] = await db
+      .select({ tenantId: receipts.tenantId, amount: receipts.amount })
+      .from(receipts)
+      .where(eq(receipts.id, resourceId))
+      .limit(1);
+
+    if (!receipt) {
+      return NextResponse.json({ error: "Not found." }, { status: 404 });
+    }
+
+    // A verified email alone is not tenant access. Require ownership of the
+    // tenant attached to the requested receipt before recording the event.
+    const [tenantOwner] = await db
+      .select({ id: users.id })
+      .from(tenants)
+      .innerJoin(users, eq(tenants.ownerId, users.id))
+      .where(and(eq(tenants.id, receipt.tenantId), eq(users.email, verified.email)))
+      .limit(1);
+
+    if (!tenantOwner) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
+    }
+
     if (eventType === "receipt_viewed") {
-      const [receipt] = await db
-        .select({ tenantId: receipts.tenantId })
-        .from(receipts)
-        .where(eq(receipts.id, resourceId))
-        .limit(1);
-
-      if (!receipt) {
-        return NextResponse.json({ error: "Not found." }, { status: 404 });
-      }
-
-      // Verify user has access to this receipt's tenant
-      const userTenants = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.email, verified.email))
-        .limit(1);
-
-      if (!userTenants.length) {
-        return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
-      }
-
-      // TODO: Implement proper users_tenants junction table for multi-tenant access
-      // For now, accept record if user exists (stub implementation)
       await recordReceiptViewed(resourceId, receipt.tenantId);
     } else {
-      const [session] = await db
-        .select({ tenantId: checkoutSessions.userId, amount: checkoutSessions.priceCents })
-        .from(checkoutSessions)
-        .where(eq(checkoutSessions.id, resourceId))
-        .limit(1);
-
-      if (!session) {
-        return NextResponse.json({ error: "Not found." }, { status: 404 });
-      }
-
-      // Verify user has access to this session's tenant
-      const userTenants = await db
-        .select({ id: users.id })
-        .from(users)
-        .where(eq(users.email, verified.email))
-        .limit(1);
-
-      if (!userTenants.length) {
-        return NextResponse.json({ error: "Unauthorized." }, { status: 403 });
-      }
-
-      // TODO: Implement proper users_tenants junction table for multi-tenant access
-      // For now, accept record if user exists (stub implementation)
-      await recordInvoiceDownloaded(resourceId, session.tenantId, session.amount);
+      await recordInvoiceDownloaded(resourceId, receipt.tenantId, receipt.amount);
     }
 
     return NextResponse.json({ ok: true, eventType });

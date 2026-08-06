@@ -1,4 +1,6 @@
 
+/* global Response */
+
 import { NextRequest } from "next/server";
 import { Scope } from "@/lib/scope/types";
 import { verifySessionToken } from "@/lib/auth/session";

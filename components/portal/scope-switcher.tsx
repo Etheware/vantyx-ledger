@@ -1,6 +1,8 @@
 
 "use client";
 
+/* global URLSearchParams */
+
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useScope } from "@/lib/scope/use-scope";

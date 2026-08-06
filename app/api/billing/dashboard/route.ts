@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDatabase, subscriptions, invoices, payments } from "@/lib/db-compat";
-import { eq, and, gte, lte, count, sum } from "drizzle-orm";
+import { getDatabase, subscriptions, invoices } from "@/lib/db-compat";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { readVerifiedEmailToken, EMAIL_VERIFIED_COOKIE } from "@/lib/auth/email-code";
 
 export async function GET(request: NextRequest) {

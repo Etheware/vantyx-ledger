@@ -4,7 +4,6 @@
 import React from "react";
 import Link from "next/link";
 import { useCapabilities } from "@/hooks/use-capabilities";
-import type { AuthSession } from "@/lib/auth/session";
 
 export interface SidebarNavItem {
   label: string;

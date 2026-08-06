@@ -19,7 +19,9 @@ function getSessionSecret() {
   if (isPlaceholder) {
     if (process.env.NODE_ENV !== "production") {
       if (!devSessionSecret) {
-        devSessionSecret = crypto.randomBytes(32).toString("hex");
+        const bytes = new Uint8Array(32);
+        globalThis.crypto.getRandomValues(bytes);
+        devSessionSecret = Buffer.from(bytes).toString("hex");
       }
       return devSessionSecret;
     }
@@ -56,7 +58,11 @@ export function createPendingTwoFactorToken(email: string) {
     exp: now + TTL_SECONDS,
   };
   const serialized = JSON.stringify(payload);
-  const signature = crypto.createHmac("sha256", getSessionSecret()).update(serialized).digest();
+  const secret = getSessionSecret();
+  if (!secret) {
+    throw new Error("Session secret not configured");
+  }
+  const signature = crypto.createHmac("sha256", secret).update(serialized).digest();
   return `${base64UrlEncode(serialized)}.${base64UrlEncode(signature)}`;
 }
 

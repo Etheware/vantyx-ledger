@@ -1,7 +1,7 @@
 
-import { chromium, FullConfig } from "@playwright/test";
+import { chromium } from "@playwright/test";
 
-async function globalSetup(config: FullConfig) {
+async function globalSetup() {
   const baseURL = "http://localhost:3000";
 
   console.log("🔧 Running global setup...");

@@ -1,3 +1,5 @@
+/* global crypto */
+
 export function isValidEmail(email: string): boolean {
   if (!email || typeof email !== "string") return false;
   const trimmed = email.trim();

@@ -75,6 +75,8 @@ export type ProcessedEvent = {
  * documented in the audit — this is a description of what exists, not an
  * aspirational superset.
  */
+/* Interface parameters are part of the provider contract even when a specific adapter does not use them. */
+/* eslint-disable no-unused-vars */
 export interface PaymentProvider {
   readonly name: "stripe" | "plaid" | "mock-vantyx";
 
@@ -86,3 +88,4 @@ export interface PaymentProvider {
   verifyWebhookSignature(input: RawWebhookInput): boolean;
   handleWebhook(input: RawWebhookInput): Promise<ProcessedEvent>;
 }
+/* eslint-enable no-unused-vars */

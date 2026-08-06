@@ -1,6 +1,5 @@
 
 import { createPaymentService } from "../vantyx/payment-service";
-import { createLedgerService } from "../vantyx/ledger-service";
 
 export interface PlaidTransaction {
   plaid_transaction_id: string;
@@ -12,6 +11,8 @@ export interface PlaidTransaction {
   merchant_name?: string;
 }
 
+/* Interface parameters are part of the provider contract even when a specific adapter does not use them. */
+/* eslint-disable no-unused-vars */
 export interface PlaidAdapter {
   syncTransactions(
     accessToken: string,
@@ -21,6 +22,7 @@ export interface PlaidAdapter {
   ): Promise<void>;
   createACHPayment(params: ACHPaymentParams): Promise<string>;
 }
+/* eslint-enable no-unused-vars */
 
 export interface ACHPaymentParams {
   customerId: string;
@@ -33,10 +35,13 @@ export interface ACHPaymentParams {
 
 export function createPlaidAdapter(): PlaidAdapter {
   const paymentService = createPaymentService();
-  const ledgerService = createLedgerService();
 
   return {
     async syncTransactions(accessToken, tenantId, clientId, customerId) {
+      // These parameters remain part of the adapter contract for the real Plaid sync.
+      void accessToken;
+      void tenantId;
+      void clientId;
       // In a real implementation, this would:
       // 1. Call Plaid API to fetch transactions
       // 2. Match them with pending payments

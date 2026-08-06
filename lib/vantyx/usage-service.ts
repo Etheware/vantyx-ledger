@@ -1,4 +1,4 @@
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { getDatabase } from "@/lib/db-compat";
 import { v4 as uuid } from "uuid";
 
@@ -22,11 +22,14 @@ export interface UsageAggregation {
   period: { startAt: Date; endAt: Date };
 }
 
+/* Interface parameters are part of the service contract even when an implementation is a stub. */
+/* eslint-disable no-unused-vars */
 export interface UsageService {
   recordUsage(input: RecordUsageInput): Promise<void>;
   getUsageForPeriod(subscriptionId: string, startAt: Date, endAt: Date): Promise<UsageAggregation[]>;
   aggregateUsageForBilling(subscriptionId: string, periodStartAt: Date, periodEndAt: Date): Promise<number>;
 }
+/* eslint-enable no-unused-vars */
 
 export function createUsageService(): UsageService {
   return {
@@ -53,6 +56,11 @@ export function createUsageService(): UsageService {
         return [];
       }
 
+      // Query parameters are reserved for the usageEvents-backed implementation.
+      void subscriptionId;
+      void startAt;
+      void endAt;
+
       // TODO: Query usageEvents table filtered by:
       // - subscriptionId
       // - recordedAt between startAt and endAt
@@ -64,6 +72,8 @@ export function createUsageService(): UsageService {
     },
 
     async aggregateUsageForBilling(subscriptionId, periodStartAt, periodEndAt) {
+      void periodStartAt;
+      void periodEndAt;
       const db = getDatabase() as any;
       if (!db) {
         return 0;

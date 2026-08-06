@@ -1,3 +1,5 @@
+/* global Buffer */
+
 import crypto from "crypto";
 
 export interface LicenseClaimPayload {

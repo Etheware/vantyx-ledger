@@ -6,6 +6,7 @@ export interface TenantBranding {
   brandColor: string;
   supportEmail: string;
   supportUrl: string;
+  ownedDomains: string[];
   displayCopy: Record<string, string>;
   receiptCopy: Record<string, string>;
   claimCopy: Record<string, string>;
@@ -14,6 +15,9 @@ export interface TenantBranding {
   returnUrls: {
     successUrl: string;
     cancelUrl: string;
+    claimUrl?: string;
+    billingUrl?: string;
+    learningUrl?: string;
   };
 }
 
@@ -26,6 +30,7 @@ export const TENANT_BRANDING: Record<string, TenantBranding> = {
     brandColor: "#0066cc",
     supportEmail: "support@backflowexamprep.com",
     supportUrl: "https://backflowexamprep.com/support",
+    ownedDomains: ["backflowexamprep.com"],
     displayCopy: {
       checkoutHeading: "Complete Your Purchase",
       checkoutDescription: "Get instant access to Backflow Exam Prep",
@@ -49,6 +54,9 @@ export const TENANT_BRANDING: Record<string, TenantBranding> = {
     returnUrls: {
       successUrl: "https://backflowexamprep.com/checkout/success",
       cancelUrl: "https://backflowexamprep.com/checkout/cancel",
+      claimUrl: "https://backflowexamprep.com/claim",
+      billingUrl: "https://backflowexamprep.com/billing",
+      learningUrl: "https://backflowexamprep.com/learning-center",
     },
   },
 };

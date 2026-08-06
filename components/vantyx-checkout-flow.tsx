@@ -18,7 +18,6 @@ export function CheckoutShell({
   children,
   currentStep,
   totalSteps,
-  token,
   step,
   title,
   subtitle,

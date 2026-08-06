@@ -17,6 +17,8 @@ export interface GrantEntitlementInput {
   metadata?: Record<string, any>;
 }
 
+/* Interface parameters are part of the service contract even when an implementation is a stub. */
+/* eslint-disable no-unused-vars */
 export interface EntitlementService {
   grantEntitlement(input: GrantEntitlementInput): Promise<any>;
   checkEntitlement(customerId: string, feature: string): Promise<boolean>;
@@ -25,6 +27,7 @@ export interface EntitlementService {
   revokeEntitlement(entitlementId: string): Promise<void>;
   expireEntitlement(entitlementId: string): Promise<void>;
 }
+/* eslint-enable no-unused-vars */
 
 export function createEntitlementService(): EntitlementService {
   return {

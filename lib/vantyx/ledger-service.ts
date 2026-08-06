@@ -20,11 +20,14 @@ export interface PostLedgerEntriesInput {
   metadata?: Record<string, any>;
 }
 
+/* Interface parameters are part of the service contract even when an implementation is a stub. */
+/* eslint-disable no-unused-vars */
 export interface LedgerService {
   postEntries(input: PostLedgerEntriesInput): Promise<void>;
   getAccountBalance(account: string, tenantId: string): Promise<{ debitTotal: number; creditTotal: number }>;
   getTrialBalance(tenantId: string): Promise<Array<{ account: string; debit: number; credit: number }>>;
 }
+/* eslint-enable no-unused-vars */
 
 export function createLedgerService(): LedgerService {
   return {

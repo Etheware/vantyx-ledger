@@ -14,7 +14,7 @@
  */
 
 import { v4 as uuid } from "uuid";
-import { createPaymentIntent, updatePaymentIntent, getPaymentIntent } from "./payment-intent";
+import { updatePaymentIntent, getPaymentIntent } from "./payment-intent";
 import { createMockAdapter } from "./mock-provider";
 import crypto from "crypto";
 
@@ -113,19 +113,6 @@ export async function processPayment(input: PaymentProcessingInput): Promise<Pay
         error: "Provider declined payment",
       };
     }
-
-    // 5. Create receipt (immutable)
-    // In production, insert receipt record to database
-    // For now, simulate receipt generation
-    const receipt = {
-      id: receiptId,
-      tenantId: input.tenantId,
-      paymentId,
-      amount: input.amountCents,
-      currency: input.currency,
-      issuedAt: new Date(),
-      receiptNumber: `REC-${Date.now()}-${receiptId.substring(0, 8)}`,
-    };
 
     // 6. Post ledger entries (balanced)
     // Simplified: assets (revenue) = revenue (liability)
@@ -246,6 +233,7 @@ export async function processWebhookEvent(
   idempotencyKey: string,
   payload: Record<string, any>,
 ): Promise<{ processed: boolean; reason?: string }> {
+  void payload;
   // Idempotency check: same eventId/idempotencyKey cannot process twice
   const key = `${tenantId}:${idempotencyKey}`;
 

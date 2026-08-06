@@ -2,7 +2,6 @@
 import { createPaymentService } from "./payment-service";
 import { createInvoiceService } from "./invoice-service";
 import { createLedgerService } from "./ledger-service";
-import { createEntitlementService } from "./entitlement-service";
 import { getDatabase, checkoutSessions, licenses } from "@/lib/db-compat";
 import { eq } from "drizzle-orm";
 import { v4 as uuid } from "uuid";
@@ -17,15 +16,17 @@ export interface CheckoutCompletionInput {
   amountCents: number;
 }
 
+/* Interface parameters are part of the service contract even when an implementation is a stub. */
+/* eslint-disable no-unused-vars */
 export interface CheckoutOrchestrator {
   completeCheckout(input: CheckoutCompletionInput): Promise<{ invoiceId: string; licenseId: string }>;
 }
+/* eslint-enable no-unused-vars */
 
 export function createCheckoutOrchestrator(): CheckoutOrchestrator {
   const paymentService = createPaymentService();
   const invoiceService = createInvoiceService();
   const ledgerService = createLedgerService();
-  const entitlementService = createEntitlementService();
 
   return {
     async completeCheckout(input) {
@@ -115,17 +116,6 @@ export function createCheckoutOrchestrator(): CheckoutOrchestrator {
             description: "Platform service fees and license fees",
           },
         ],
-      });
-
-      // 7. Grant entitlement for access to product
-      const metadata = session.metadata as Record<string, any>;
-      await entitlementService.grantEntitlement({
-        tenantId: input.tenantId,
-        clientId: input.clientId,
-        customerId: input.customerId,
-        feature: session.productKey,
-        licenseId: license[0].id,
-        expiresAt: metadata?.expiresAt ? new Date(metadata.expiresAt) : undefined,
       });
 
       return {

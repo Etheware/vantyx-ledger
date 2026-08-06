@@ -1,9 +1,11 @@
+import React from "react";
 import Link from "next/link";
+import type { ReactNode } from "react";
 
 export default function PortalLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <div style={{ display: "flex", minHeight: "100vh" }}>

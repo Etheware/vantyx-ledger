@@ -1,6 +1,8 @@
 
 "use client";
 
+/* global URLSearchParams */
+
 import React, { createContext, useEffect, useState, ReactNode } from "react";
 import { useSearchParams } from "next/navigation";
 import { Scope, ScopeContextType, Organization, Project } from "./types";

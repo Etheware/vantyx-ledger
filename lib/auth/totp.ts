@@ -1,4 +1,6 @@
 
+/* global Buffer, URLSearchParams */
+
 import crypto from "crypto";
 import QRCode from "qrcode";
 
@@ -73,11 +75,14 @@ function getVaultKey() {
 /** AES-256-GCM encrypt, format: iv:authTag:ciphertext (all hex) */
 export function encryptSecret(plaintext: string) {
   const key = getVaultKey();
-  const iv = crypto.randomBytes(12);
+  const ivBytes = new Uint8Array(12);
+  globalThis.crypto.getRandomValues(ivBytes);
+  const iv = Buffer.from(ivBytes);
   const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
-  const ciphertext = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const plaintextBuf = Buffer.from(plaintext, "utf8");
+  const ciphertext = Buffer.concat([cipher.update(plaintextBuf), cipher.final()]);
   const authTag = cipher.getAuthTag();
-  return `${iv.toString("hex")}:${authTag.toString("hex")}:${ciphertext.toString("hex")}`;
+  return `${(iv as any).toString("hex")}:${(authTag as any).toString("hex")}:${(ciphertext as any).toString("hex")}`;
 }
 
 export function decryptSecret(encrypted: string) {
@@ -87,17 +92,20 @@ export function decryptSecret(encrypted: string) {
     throw new Error("Malformed encrypted secret");
   }
 
+  const ciphertextBuf = Buffer.from(ciphertextHex, "hex");
   const decipher = crypto.createDecipheriv("aes-256-gcm", key, Buffer.from(ivHex, "hex"));
   decipher.setAuthTag(Buffer.from(authTagHex, "hex"));
   const plaintext = Buffer.concat([
-    decipher.update(Buffer.from(ciphertextHex, "hex")),
+    decipher.update(ciphertextBuf),
     decipher.final(),
   ]);
   return plaintext.toString("utf8");
 }
 
 export function generateTotpSecret() {
-  return base32Encode(crypto.randomBytes(20));
+  const secretBytes = new Uint8Array(20);
+  globalThis.crypto.getRandomValues(secretBytes);
+  return base32Encode(Buffer.from(secretBytes));
 }
 
 export function buildProvisioningUri(email: string, base32Secret: string) {

@@ -42,18 +42,22 @@ export class MockVantyxProvider implements PaymentProvider {
   }
 
   async listPaymentMethods(_customerId: string): Promise<PaymentMethodRecord[]> {
+    void _customerId;
     return [{ id: `mock_pm_${randomUUID()}`, rail: "bank_transfer", label: "Mock bank account", isDefault: true }];
   }
 
   async refundPayment(_input: RefundInput): Promise<RefundResult> {
+    void _input;
     return { refundId: `mock_re_${randomUUID()}`, status: "succeeded" };
   }
 
   verifyWebhookSignature(_input: RawWebhookInput): boolean {
+    void _input;
     return true;
   }
 
   async handleWebhook(_input: RawWebhookInput): Promise<ProcessedEvent> {
+    void _input;
     return { eventId: `mock_evt_${randomUUID()}`, eventType: "mock.event" };
   }
 }

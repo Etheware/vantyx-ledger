@@ -1,31 +1,35 @@
-
 import { Building2, CircleDollarSign, CreditCard, ShieldCheck } from "lucide-react";
+import { getSession as getRequestSession } from "@/lib/auth/get-session";
+import { getPortalLicenses, getPortalTransactions } from "../../../lib/vantyx-portal-data";
 import { VantyxGhostButton, VantyxPanel, VantyxPortalShell, VantyxStatusPill } from "../../../components/vantyx-portal-shell";
-import { portalLicenses, portalTransactions } from "../../../lib/vantyx-portal-data";
-
-function centsFromAmount(amount: string) {
-  return Math.round(Number(amount.replace(/[^0-9.]/g, "")) * 100);
-}
 
 function formatCents(cents: number) {
   return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
-export default function ReportsPage() {
+export default async function ReportsPage() {
+  const session = await getRequestSession();
+  const tenantName = session?.orgName || "Acme Corporation";
+  const tenantId = session?.activeOrgUuid || session?.orgUuid || null;
+  const [portalLicenses, portalTransactions] = await Promise.all([
+    getPortalLicenses(tenantId),
+    getPortalTransactions(tenantId),
+  ]);
+
   const settled = portalTransactions.filter((txn) => txn.status === "settled");
-  const settledTotalCents = settled.reduce((sum, txn) => sum + centsFromAmount(txn.amount), 0);
+  const settledTotalCents = settled.reduce((sum, txn) => sum + Math.round(Number(txn.amount.replace(/[^0-9.]/g, "")) * 100), 0);
   const bankTransferCount = portalTransactions.filter((txn) => txn.paymentRail === "bank_transfer").length;
   const activeLicenses = portalLicenses.filter((license) => license.status === "active").length;
 
   const metrics = [
     { label: "Settled revenue", value: formatCents(settledTotalCents), delta: `${settled.length} transactions`, icon: CircleDollarSign },
     { label: "Active licenses", value: String(activeLicenses), delta: `${portalLicenses.length} total issued`, icon: ShieldCheck },
-    { label: "Bank transfer share", value: `${Math.round((bankTransferCount / portalTransactions.length) * 100)}%`, delta: `${bankTransferCount} of ${portalTransactions.length}`, icon: Building2 },
-    { label: "Card fallback share", value: `${Math.round(((portalTransactions.length - bankTransferCount) / portalTransactions.length) * 100)}%`, delta: `${portalTransactions.length - bankTransferCount} of ${portalTransactions.length}`, icon: CreditCard },
+    { label: "Bank transfer share", value: portalTransactions.length ? `${Math.round((bankTransferCount / portalTransactions.length) * 100)}%` : "0%", delta: `${bankTransferCount} of ${portalTransactions.length}`, icon: Building2 },
+    { label: "Card fallback share", value: portalTransactions.length ? `${Math.round(((portalTransactions.length - bankTransferCount) / portalTransactions.length) * 100)}%` : "0%", delta: `${portalTransactions.length - bankTransferCount} of ${portalTransactions.length}`, icon: CreditCard },
   ];
 
   return (
-    <VantyxPortalShell title="Reports" description="Revenue and license activity across your account." activePath="/reports">
+    <VantyxPortalShell title="Reports" description="Revenue and license activity across your account." activePath="/reports" organizationName={tenantName}>
       <div className="grid gap-5 xl:grid-cols-4">
         {metrics.map((metric) => {
           const Icon = metric.icon;

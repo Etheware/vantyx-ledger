@@ -1,29 +1,66 @@
+/* global fetch */
 
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { Clock3 } from "lucide-react";
+import { CheckCircle2, Clock3 } from "lucide-react";
 import { verifyCheckoutSessionToken } from "../../../../lib/billing/checkout-session";
 
+type CheckoutIntrospection = {
+  ok: boolean;
+  payload: {
+    productName?: string;
+    totalCardCents?: number;
+  };
+  stripe: null | {
+    sessionId: string;
+    status: string;
+    paymentStatus: string | null;
+    amountTotal: number | null;
+    currency: string | null;
+    confirmed: boolean;
+  };
+};
+
 function currency(cents: number) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", minimumFractionDigits: 2 }).format(cents / 100);
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+  }).format(cents / 100);
 }
 
-/**
- * This page used to unconditionally render "Payment successful" the moment the
- * checkout-session token verified -- but that token only proves an order was
- * drafted with these details, not that any payment ever settled. There is
- * currently no persisted, checkable record that reliably answers "did this
- * checkout actually get paid" (the Stripe webhook handler logs a generic
- * payment_events row keyed by provider event ID, not by this checkout's token
- * -- see app/api/stripe/webhook/route.ts). Real payment now happens entirely
- * on Stripe's own hosted checkout page (see CheckoutPlaceOrderButton +
- * app/api/billing/checkout), which redirects to /billing/success on genuine
- * success -- this route is not part of that path anymore and should rarely be
- * reached at all. Until a real, queryable settlement record exists, this page
- * must never claim success -- only that confirmation is pending.
- */
-export default async function ConfirmationPage({ params }: { params: Promise<{ token: string }> }) {
+async function loadCheckoutState(token: string, sessionId: string) {
+  const headersList = await headers();
+  const host = headersList.get("x-forwarded-host") || headersList.get("host");
+  if (!host) {
+    return null;
+  }
+
+  const proto = headersList.get("x-forwarded-proto") || "https";
+  const query = sessionId ? `?session_id=${encodeURIComponent(sessionId)}` : "";
+  const response = await fetch(
+    `${proto}://${host}/api/billing/checkout/${encodeURIComponent(token)}${query}`,
+    { cache: "no-store" }
+  );
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return (await response.json()) as CheckoutIntrospection;
+}
+
+export default async function ConfirmationPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { token } = await params;
+  const query = await searchParams;
+
   let session;
   try {
     session = verifyCheckoutSessionToken(token);
@@ -31,6 +68,12 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ t
     notFound();
   }
   if (!session) notFound();
+
+  const sessionId = typeof query.session_id === "string" ? query.session_id : "";
+  const checkoutState = sessionId ? await loadCheckoutState(token, sessionId) : null;
+  const confirmed = Boolean(checkoutState?.stripe?.confirmed);
+  const amount = checkoutState?.stripe?.amountTotal ?? session.totalCardCents ?? 0;
+  const orderName = checkoutState?.payload.productName ?? session.productName ?? "Order";
 
   return (
     <main className="min-h-[100dvh] bg-black text-white">
@@ -42,31 +85,34 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ t
               <div className="mt-2 text-[12px] uppercase tracking-[0.5em] text-white/40">Ledger</div>
             </div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/25 px-4 py-2 text-[12px] uppercase tracking-[0.24em] text-white/70">
-              Secure checkout
+              Tokenized return
             </div>
           </div>
 
           <div className="mx-auto mt-20 max-w-3xl text-center">
             <div className="mx-auto flex h-40 w-40 items-center justify-center rounded-full border border-white/15 bg-white/[0.03] text-white/70 shadow-[0_0_40px_rgba(255,255,255,0.06)]">
-              <Clock3 className="h-20 w-20" />
+              {confirmed ? <CheckCircle2 className="h-20 w-20" /> : <Clock3 className="h-20 w-20" />}
             </div>
-            <div className="mt-10 text-[32px] font-light uppercase tracking-[0.24em]">Payment confirmation is pending</div>
+            <div className="mt-10 text-[32px] font-light uppercase tracking-[0.24em]">
+              {confirmed ? "Payment confirmed" : "Payment confirmation is pending"}
+            </div>
             <p className="mt-4 text-[16px] leading-8 text-white/56">
-              We have not received confirmation that this order was paid yet. If you completed payment on Stripe&apos;s
-              secure page, this will update automatically — no need to place the order again.
+              {confirmed
+                ? "Stripe returned a paid session for this token. No license was claimed before server confirmation."
+                : "We have not received a paid Stripe session for this token yet. If you just completed checkout, refresh after Stripe finishes redirecting."}
             </p>
 
             <div className="mt-10 grid gap-4 rounded-[22px] border border-white/10 bg-black/20 p-6 sm:grid-cols-2">
-              <Stat label="Order" value={session.productName ?? "Order"} />
-              <Stat label="Amount" value={currency(session.totalCardCents ?? 0)} />
+              <Stat label="Order" value={orderName} />
+              <Stat label="Amount" value={currency(amount)} />
             </div>
 
             <div className="mt-10 flex flex-wrap justify-center gap-4">
+              <Link href="/billing" className="inline-flex min-h-[64px] items-center justify-center rounded-[14px] border border-white/12 bg-white/[0.02] px-7 text-[14px] uppercase tracking-[0.24em] text-white/80">
+                Back to billing
+              </Link>
               <Link href="/dashboard" className="inline-flex min-h-[64px] items-center justify-center rounded-[14px] border border-white/12 bg-white/[0.02] px-7 text-[14px] uppercase tracking-[0.24em] text-white/80">
                 Go to dashboard
-              </Link>
-              <Link href="/support/contact" className="inline-flex min-h-[64px] items-center justify-center rounded-[14px] border border-white/12 bg-white/[0.02] px-7 text-[14px] uppercase tracking-[0.24em] text-white/80">
-                Contact support
               </Link>
             </div>
           </div>

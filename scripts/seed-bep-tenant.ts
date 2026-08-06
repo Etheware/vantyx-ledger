@@ -1,4 +1,6 @@
 
+/* global require, module */
+
 /**
  * Seed script: Configure Backflow Exam Prep as a Vantyx tenant
  *
@@ -31,22 +33,6 @@ const BEP_PRODUCT_CONFIG = {
   interval: "week",
   priceCents: 1999, // $19.99
   currency: "usd",
-};
-
-const BEP_BRANDING = {
-  displayName: "Backflow Exam Prep Weekly License",
-  description: "Seven days of access to Backflow Exam Prep Learning Center, simulator practice, course progress, and eligible study tools.",
-  receiptCopy: "Thank you for your purchase. Your license will activate immediately upon payment confirmation.",
-  claimCopy: "Claim your Backflow Exam Prep license and continue into your learning area.",
-  onboardingCopy: "Finish setup for your Backflow Exam Prep account and connect your license.",
-  invoiceFooter: "Backflow Exam Prep customer billing handled through Vantyx Ledger.",
-  supportUrl: "https://backflowexamprep.com/support",
-  returnUrls: {
-    success: "https://backflowexamprep.com/billing/success",
-    claim: "https://backflowexamprep.com/claim",
-    billing: "https://backflowexamprep.com/billing",
-    learning: "https://backflowexamprep.com/learning-center",
-  },
 };
 
 async function seedBEPTenant() {

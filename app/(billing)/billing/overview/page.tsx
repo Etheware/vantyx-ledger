@@ -9,6 +9,8 @@ import {
 import { getBillingExportRows, getBillingTrends } from "../../../../src/db/billing-admin";
 import { resolveTenantContextFromRequest } from "../../../../lib/auth/tenant-context";
 
+export const dynamic = "force-dynamic";
+
 const quickActions = [
   { title: "Open invoices", href: "/billing/invoices" },
   { title: "Manage billing", href: "/billing/subscription" },

@@ -1,3 +1,4 @@
+/* global HTMLButtonElement */
 
 import Link from "next/link";
 import { redirect } from "next/navigation";

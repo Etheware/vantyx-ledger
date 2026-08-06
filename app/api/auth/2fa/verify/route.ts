@@ -5,7 +5,6 @@ import {
   verifyTotpForUser,
   findOrCreateAuthUser,
 } from "../../../../../lib/auth/auth-store";
-import { createVerifiedEmailToken, EMAIL_VERIFIED_COOKIE } from "../../../../../lib/auth/email-code";
 import { TWO_FACTOR_PENDING_COOKIE, verifyPendingTwoFactorToken } from "../../../../../lib/auth/two-factor-session";
 import { createSession } from "../../../../../lib/auth/session";
 import { getOrCreatePersonalOrg } from "../../../../../lib/auth/org-helper";

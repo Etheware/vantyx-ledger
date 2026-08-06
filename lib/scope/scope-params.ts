@@ -1,4 +1,6 @@
 
+/* global URLSearchParams */
+
 import { Scope } from "./types";
 
 export function getScopeFromParams(searchParams: URLSearchParams): Partial<Scope> | null {

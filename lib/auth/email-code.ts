@@ -1,3 +1,5 @@
+/* global Buffer */
+
 import { generateRandomCode, getEmailCodeExpirationSeconds } from "./email-code-shared";
 import crypto from "crypto";
 
@@ -22,7 +24,9 @@ function getEmailVerificationSecret() {
   if (isPlaceholder) {
     if (process.env.NODE_ENV !== "production") {
       if (!devEmailSecret) {
-        devEmailSecret = crypto.randomBytes(32).toString("hex");
+        const secretBytes = new Uint8Array(32);
+        globalThis.crypto.getRandomValues(secretBytes);
+        devEmailSecret = Buffer.from(secretBytes).toString("hex");
       }
       return devEmailSecret;
     }
@@ -99,7 +103,11 @@ export function createVerifiedEmailToken(email: string) {
     exp: now + ttlSeconds,
   };
   const serialized = JSON.stringify(payload);
-  const signature = crypto.createHmac("sha256", getEmailVerificationSecret()).update(serialized).digest();
+  const secret = getEmailVerificationSecret();
+  if (!secret) {
+    throw new Error("Email verification secret not configured");
+  }
+  const signature = crypto.createHmac("sha256", secret).update(serialized).digest();
   return `${base64UrlEncode(serialized)}.${base64UrlEncode(signature)}`;
 }
 
@@ -111,7 +119,11 @@ export function readVerifiedEmailToken(token: string): VerifiedEmailPayload | nu
 
   try {
     const serialized = base64UrlDecode(encodedPayload);
-    const expected = crypto.createHmac("sha256", getEmailVerificationSecret()).update(serialized).digest();
+    const secret = getEmailVerificationSecret();
+    if (!secret) {
+      return null;
+    }
+    const expected = crypto.createHmac("sha256", secret).update(serialized).digest();
     const provided = Buffer.from(encodedSignature.split("-").join("+").split("_").join("/"), "base64");
 
     if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {

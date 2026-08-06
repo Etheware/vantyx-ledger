@@ -1,5 +1,5 @@
 import { getDatabase } from "@/lib/db-compat";
-import { and, eq } from "@/lib/db-compat";
+import { eq } from "@/lib/db-compat";
 import { paymentEvents } from "@/lib/db-compat";
 
 export interface WalletBalance {
@@ -14,6 +14,7 @@ export interface WalletBalance {
 }
 
 export async function getWalletBalance(tenantId: string, userId: string): Promise<WalletBalance> {
+  void userId;
   const db = getDatabase() as any;
   if (!db) {
     return { available: 0, pending: 0, reserved: 0, withdrawalPending: 0, negative: 0, lifetimeEarnings: 0, lifetimeWithdrawals: 0, total: 0 };

@@ -1,4 +1,8 @@
 
+/* global Response */
+
+/* global Response */
+
 import { NextRequest } from "next/server";
 import { extractScopeFromRequest, createScopeError } from "./scope-middleware";
 
@@ -11,6 +15,9 @@ export interface ProtectedPortalRequest {
   };
   userId: string;
 }
+
+/* These callback parameters are part of the public validation contract; individual adapters may not need all of them. */
+/* eslint-disable no-unused-vars */
 
 export async function protectedPortalHandler(
   request: NextRequest,
@@ -75,3 +82,4 @@ export async function protectedPortalHandler(
     userId,
   });
 }
+/* eslint-enable no-unused-vars */

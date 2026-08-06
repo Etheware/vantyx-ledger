@@ -1,6 +1,6 @@
 
 import { NextRequest, NextResponse } from "next/server";
-import { authenticateUser, findOrCreateAuthUser, createStoredAuthChallenge } from "../../../../lib/auth/auth-store";
+import { authenticateUser, createStoredAuthChallenge } from "../../../../lib/auth/auth-store";
 import { isValidEmail } from "../../../../lib/auth/email-code-shared";
 import { createPendingTwoFactorToken, getPendingTwoFactorTtlSeconds, TWO_FACTOR_PENDING_COOKIE } from "../../../../lib/auth/two-factor-session";
 import { createEmailOtpChallenge, EMAIL_OTP_COOKIE } from "../../../../lib/auth/email-code";

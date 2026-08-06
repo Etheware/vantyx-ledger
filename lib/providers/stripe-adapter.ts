@@ -1,7 +1,3 @@
-import { createPaymentService } from "../vantyx/payment-service";
-import { createInvoiceService } from "../vantyx/invoice-service";
-import { createLedgerService } from "../vantyx/ledger-service";
-
 export interface StripeWebhookEvent {
   id: string;
   type: string;
@@ -11,10 +7,13 @@ export interface StripeWebhookEvent {
   };
 }
 
+/* Interface parameters are part of the provider contract even when a specific adapter does not use them. */
+/* eslint-disable no-unused-vars */
 export interface StripeAdapter {
   handleWebhook(event: StripeWebhookEvent, tenantId: string, clientId: string): Promise<void>;
   createCheckoutSession(params: StripeCheckoutParams): Promise<string>;
 }
+/* eslint-enable no-unused-vars */
 
 export interface StripeCheckoutParams {
   tenantId: string;
@@ -28,11 +27,17 @@ export interface StripeCheckoutParams {
 export function createStripeAdapter(): StripeAdapter {
   return {
     async handleWebhook(event: StripeWebhookEvent, tenantId: string, clientId: string): Promise<void> {
+      void clientId;
       // TODO: Implement Stripe webhook handling
       console.log(`Stripe webhook: ${event.type} for tenant ${tenantId}`);
     },
 
     async createCheckoutSession(params: StripeCheckoutParams): Promise<string> {
+      void params.tenantId;
+      void params.customerId;
+      void params.amount;
+      void params.currency;
+      void params.metadata;
       // TODO: Implement Stripe checkout session creation
       console.log(`Creating Stripe checkout for ${params.productId}`);
       return "stripe_checkout_session_stub";

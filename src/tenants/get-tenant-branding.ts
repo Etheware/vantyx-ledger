@@ -22,6 +22,7 @@ export interface TenantProductBranding {
   supportUrl: string;
   returnUrls: {
     success: string;
+    cancel: string;
     claim: string;
     billing: string;
     learning: string;
@@ -32,6 +33,36 @@ export interface TenantBrandingWithOrgInfo extends TenantProductBranding {
   tenantName: string;
   supportEmail: string;
   brandColor: string | null;
+  ownedDomains: string[];
+}
+
+function extractDomain(value: string | null | undefined): string | null {
+  if (!value) {
+    return null;
+  }
+
+  const trimmed = value.trim().toLowerCase();
+  const emailParts = trimmed.split("@");
+  if (emailParts.length === 2 && emailParts[1]) {
+    return emailParts[1];
+  }
+
+  try {
+    const url = new URL(trimmed);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return null;
+  }
+}
+
+function uniqueDomains(domains: Array<string | null | undefined>): string[] {
+  return Array.from(
+    new Set(
+      domains
+        .map((domain) => (domain ? domain.trim().toLowerCase() : ""))
+        .filter((domain) => domain.length > 0),
+    ),
+  );
 }
 
 /**
@@ -81,6 +112,16 @@ export async function getTenantProductBranding(
 
   const result = rows[0];
   const clientBranding = getClientBranding(tenantId);
+  const ownedDomains = uniqueDomains([
+    ...(clientBranding.ownedDomains || []),
+    extractDomain(result.supportEmail),
+    extractDomain(clientBranding.supportEmail),
+    extractDomain(clientBranding.returnUrls.successUrl),
+    extractDomain(clientBranding.returnUrls.cancelUrl),
+    extractDomain(clientBranding.returnUrls.claimUrl),
+    extractDomain(clientBranding.returnUrls.billingUrl),
+    extractDomain(clientBranding.returnUrls.learningUrl),
+  ]);
   return {
     tenantId: result.tenantId,
     productKey: result.productKey,
@@ -93,13 +134,15 @@ export async function getTenantProductBranding(
     supportUrl: clientBranding.supportUrl,
     returnUrls: {
       success: clientBranding.returnUrls.successUrl,
-      claim: clientBranding.returnUrls.successUrl,
-      billing: clientBranding.returnUrls.successUrl,
-      learning: clientBranding.returnUrls.successUrl,
+      cancel: clientBranding.returnUrls.cancelUrl,
+      claim: clientBranding.returnUrls.claimUrl ?? clientBranding.returnUrls.successUrl,
+      billing: clientBranding.returnUrls.billingUrl ?? clientBranding.returnUrls.successUrl,
+      learning: clientBranding.returnUrls.learningUrl ?? clientBranding.returnUrls.successUrl,
     },
     tenantName: result.tenantName ?? clientBranding.publicName,
     supportEmail: result.supportEmail ?? clientBranding.supportEmail,
     brandColor: result.brandColor ?? clientBranding.brandColor,
+    ownedDomains,
   };
 }
 
@@ -152,12 +195,23 @@ export async function getTenantBrandingByTenantId(
     supportUrl: getClientBranding(tenantId).supportUrl,
     returnUrls: {
       success: getClientBranding(tenantId).returnUrls.successUrl,
-      claim: getClientBranding(tenantId).returnUrls.successUrl,
-      billing: getClientBranding(tenantId).returnUrls.successUrl,
-      learning: getClientBranding(tenantId).returnUrls.successUrl,
+      cancel: getClientBranding(tenantId).returnUrls.cancelUrl,
+      claim: getClientBranding(tenantId).returnUrls.claimUrl ?? getClientBranding(tenantId).returnUrls.successUrl,
+      billing: getClientBranding(tenantId).returnUrls.billingUrl ?? getClientBranding(tenantId).returnUrls.successUrl,
+      learning: getClientBranding(tenantId).returnUrls.learningUrl ?? getClientBranding(tenantId).returnUrls.successUrl,
     },
     tenantName: row.tenantName ?? getClientBranding(tenantId).publicName,
     supportEmail: row.supportEmail ?? getClientBranding(tenantId).supportEmail,
     brandColor: row.brandColor ?? getClientBranding(tenantId).brandColor,
+    ownedDomains: uniqueDomains([
+      ...(getClientBranding(tenantId).ownedDomains || []),
+      extractDomain(row.supportEmail),
+      extractDomain(getClientBranding(tenantId).supportEmail),
+      extractDomain(getClientBranding(tenantId).returnUrls.successUrl),
+      extractDomain(getClientBranding(tenantId).returnUrls.cancelUrl),
+      extractDomain(getClientBranding(tenantId).returnUrls.claimUrl),
+      extractDomain(getClientBranding(tenantId).returnUrls.billingUrl),
+      extractDomain(getClientBranding(tenantId).returnUrls.learningUrl),
+    ]),
   }));
 }

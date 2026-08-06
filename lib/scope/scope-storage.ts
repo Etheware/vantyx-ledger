@@ -1,4 +1,6 @@
 
+/* global localStorage */
+
 import { Scope } from "./types";
 
 const STORAGE_KEY = "vantyx.portal.scope";

@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const PLANS = [
   {
@@ -28,6 +28,8 @@ const PLANS = [
 ];
 
 export default function BillingPage() {
+  const router = useRouter();
+
   return (
     <div>
       <h1 style={{ fontSize: "2rem", fontWeight: "bold", marginBottom: "1rem" }}>
@@ -88,7 +90,9 @@ export default function BillingPage() {
               ))}
             </ul>
 
-            <button style={{
+            <button
+              onClick={() => router.push(`/checkout?checkoutId=${plan.key}&tenant=bep`)}
+              style={{
               width: "100%",
               padding: "0.75rem",
               backgroundColor: plan.highlighted ? "#3b82f6" : "#f3f4f6",
@@ -97,7 +101,7 @@ export default function BillingPage() {
               borderRadius: "4px",
               fontWeight: "500",
               cursor: "pointer",
-            }}>
+              }}>
               {plan.highlighted ? "Get Started" : "Choose Plan"}
             </button>
           </div>
