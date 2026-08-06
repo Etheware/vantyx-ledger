@@ -1,4 +1,4 @@
-import { eq, and, gte, isNull, or } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { getDatabase, licenses } from "@/lib/db-compat";
 import { v4 as uuid } from "uuid";
 
@@ -6,13 +6,8 @@ export type LicenseStatus = "pending" | "active" | "suspended" | "expired" | "re
 
 export interface IssueLicenseInput {
   tenantId: string;
-  clientId: string;
-  productId: string;
-  customerId: string;
-  customerEmail: string;
-  tier: "free" | "pro" | "enterprise";
-  seatLimit?: number;
-  expiresAt?: Date;
+  customerId?: string;
+  tier?: "free" | "pro" | "enterprise";
   metadata?: Record<string, any>;
 }
 
@@ -42,19 +37,9 @@ export function createLicenseService(): LicenseService {
         .values({
           id: uuid(),
           tenantId: input.tenantId,
-          clientId: input.clientId,
-          productId: input.productId,
-          customerId: input.customerId,
-          customerEmail: input.customerEmail,
-          licenseKey,
-          tier: input.tier,
-          status: "pending",
-          seatLimit: input.seatLimit,
-          seatUsed: 0,
-          expiresAt: input.expiresAt,
-          issuedAt: new Date(),
-          activatedAt: null,
-          metadata: input.metadata || {},
+          key: licenseKey,
+          status: "active",
+          expiresAt: null,
         })
         .returning();
 
@@ -77,11 +62,7 @@ export function createLicenseService(): LicenseService {
 
       await db
         .update(licenses)
-        .set({
-          status: "active",
-          activatedAt: new Date(),
-          updatedAt: new Date(),
-        })
+        .set({ status: "active" })
         .where(eq(licenses.id, licenseId));
     },
 
@@ -91,13 +72,11 @@ export function createLicenseService(): LicenseService {
         return false;
       }
 
-      const now = new Date();
       const license = await db.query.licenses.findFirst({
         where: and(
           eq(licenses.tenantId, tenantId),
-          eq(licenses.licenseKey, licenseKey),
-          eq(licenses.status, "active"),
-          or(isNull(licenses.expiresAt), gte(licenses.expiresAt, now))
+          eq(licenses.key, licenseKey),
+          eq(licenses.status, "active")
         ),
       });
 
@@ -124,10 +103,7 @@ export function createLicenseService(): LicenseService {
       }
 
       const results = await db.query.licenses.findMany({
-        where: and(
-          eq(licenses.tenantId, tenantId),
-          eq(licenses.customerId, customerId)
-        ),
+        where: eq(licenses.tenantId, tenantId),
       });
 
       return results;
@@ -149,10 +125,7 @@ export function createLicenseService(): LicenseService {
 
       await db
         .update(licenses)
-        .set({
-          status: "suspended",
-          updatedAt: new Date(),
-        })
+        .set({ status: "suspended" })
         .where(eq(licenses.id, licenseId));
     },
 
@@ -172,11 +145,7 @@ export function createLicenseService(): LicenseService {
 
       await db
         .update(licenses)
-        .set({
-          status: "revoked",
-          revokedAt: new Date(),
-          updatedAt: new Date(),
-        })
+        .set({ status: "revoked" })
         .where(eq(licenses.id, licenseId));
     },
 
@@ -196,10 +165,7 @@ export function createLicenseService(): LicenseService {
 
       await db
         .update(licenses)
-        .set({
-          expiresAt: newExpiresAt,
-          updatedAt: new Date(),
-        })
+        .set({ expiresAt: newExpiresAt })
         .where(eq(licenses.id, licenseId));
     },
   };

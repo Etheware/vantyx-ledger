@@ -1,14 +1,50 @@
 import { NextRequest, NextResponse } from "next/server";
+import { verifySessionToken } from "@/lib/auth/session";
+import { readVerifiedEmailToken, EMAIL_VERIFIED_COOKIE } from "@/lib/auth/email-code";
 import { stripe } from "@/lib/billing/stripe";
 import { canWithdraw, getWalletAccessGrant, type WalletSession } from "@/lib/auth";
 import { activateLicenseAfterPayment } from "@/lib/billing/license-fulfillment";
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionCookie = request.cookies.get("vantyx_session")?.value;
+    const emailVerifiedCookie = request.cookies.get(EMAIL_VERIFIED_COOKIE)?.value;
+
+    if (!sessionCookie && !emailVerifiedCookie) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    let authenticatedUserId: string | null = null;
+    let authenticatedTenantId: string | null = null;
+
+    if (sessionCookie) {
+      const session = await verifySessionToken(sessionCookie);
+      if (session) {
+        authenticatedUserId = session.userId;
+        authenticatedTenantId = session.orgUuid;
+      }
+    } else if (emailVerifiedCookie) {
+      const verified = readVerifiedEmailToken(emailVerifiedCookie);
+      if (!verified) {
+        return NextResponse.json(
+          { error: "Unauthorized" },
+          { status: 401 }
+        );
+      }
+    }
+
+    if (!authenticatedUserId || !authenticatedTenantId) {
+      return NextResponse.json(
+        { error: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const {
-      userId,
-      tenantId,
       paymentMethodId,
       amount,
       clientId,
@@ -18,16 +54,24 @@ export async function POST(request: NextRequest) {
       productKey,
       invoiceId,
       licenseId,
+      tenantId: requestedTenantId,
     } = body;
 
-    if (!userId || !tenantId || !paymentMethodId || !amount) {
+    if (!paymentMethodId || !amount || !requestedTenantId) {
       return NextResponse.json(
         { error: "Missing required fields" },
         { status: 400 }
       );
     }
 
-    const grant = await getWalletAccessGrant(userId, tenantId);
+    if (requestedTenantId !== authenticatedTenantId) {
+      return NextResponse.json(
+        { error: "Tenant mismatch" },
+        { status: 403 }
+      );
+    }
+
+    const grant = await getWalletAccessGrant(authenticatedUserId, authenticatedTenantId);
     if (!grant) {
       return NextResponse.json(
         { error: "No access grant found" },
@@ -35,8 +79,8 @@ export async function POST(request: NextRequest) {
       );
     }
     const session: WalletSession = {
-      userId,
-      tenantId,
+      userId: authenticatedUserId,
+      tenantId: authenticatedTenantId,
       email: "",
       emailVerified: true,
       twoFactorEnabled: true,
@@ -58,7 +102,7 @@ export async function POST(request: NextRequest) {
 
     if (paymentIntent.status === "succeeded" && clientId && customerId && customerEmail && productKey) {
       await activateLicenseAfterPayment({
-        tenantId,
+        tenantId: authenticatedTenantId,
         clientId,
         customerId,
         customerEmail,

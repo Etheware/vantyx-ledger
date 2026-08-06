@@ -73,7 +73,11 @@ export function verifyPendingTwoFactorToken(token: string) {
   }
 
   const serialized = base64UrlDecode(encodedPayload);
-  const expected = crypto.createHmac("sha256", getSessionSecret()).update(serialized).digest();
+  const secret = getSessionSecret();
+  if (!secret) {
+    throw new Error("Session secret not configured");
+  }
+  const expected = crypto.createHmac("sha256", secret).update(serialized).digest();
   const provided = Buffer.from(encodedSignature.split("-").join("+").split("_").join("/"), "base64");
 
   if (provided.length !== expected.length || !crypto.timingSafeEqual(provided, expected)) {

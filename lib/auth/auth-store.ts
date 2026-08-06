@@ -76,21 +76,18 @@ async function sha256Hex(input: string) {
 }
 
 async function hashPassword(password: string) {
-  const saltBytes = new Uint8Array(16);
-  globalThis.crypto.getRandomValues(saltBytes);
-  const salt = Buffer.from(saltBytes).toString("hex");
-  const derived = await sha256Hex(`${salt}:${password}`);
-  return `${salt}:${derived}`;
+  const bcrypt = require("bcryptjs");
+  const salt = await bcrypt.genSalt(12);
+  return await bcrypt.hash(password, salt);
 }
 
-async function verifyPasswordHash(password: string, value: string) {
-  const [salt, stored] = value.split(":");
-  if (!salt || !stored) {
+async function verifyPasswordHash(password: string, hash: string) {
+  const bcrypt = require("bcryptjs");
+  try {
+    return await bcrypt.compare(password, hash);
+  } catch {
     return false;
   }
-
-  const derived = await sha256Hex(`${salt}:${password}`);
-  return derived === stored;
 }
 
 function randomBackupCode() {

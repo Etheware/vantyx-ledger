@@ -22,8 +22,15 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    // TODO: Verify user has access to this tenant
-    // For now, return licenses for the tenant
+    const db = require("@/lib/db-compat").getDatabase?.() as any;
+    if (db) {
+      const userTenants = await db.query.userTenants?.findFirst({
+        where: (t: any) => t.email === verified.email && t.tenantId === tenantId,
+      }).catch(() => null);
+      if (!userTenants) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
 
     const customerId = request.nextUrl.searchParams.get("customerId") || verified.email;
     const licenses = await licenseService.getLicensesByCustomer(customerId, tenantId);
@@ -69,6 +76,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const db = require("@/lib/db-compat").getDatabase?.() as any;
+    if (db) {
+      const userTenants = await db.query.userTenants?.findFirst({
+        where: (t: any) => t.email === verified.email && t.tenantId === tenantId,
+      }).catch(() => null);
+      if (!userTenants) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+    }
     if (action === "activate") {
       const licenseId = body?.licenseId || "";
       if (!licenseId) {
